@@ -8,7 +8,7 @@ Segue abaixo a sua arquitetura macro do Ritchie-CLI:
 
 
 <p align="center">
-  <img width="1191" height="631" src="docs/img/architecture-ritchie.png">
+  <img width="1191" height="631" src="docs/img/ritchie-cli-architecture.png">
 </p>
 
 ## Pre-Requisitos
@@ -51,6 +51,7 @@ $ rit
     apply       Apply objects from some type
     completion  Add autocomplete for terminal
     create      Create objects
+    delete      Delete objects
     generate    Generate objects from some type
     help        Help about any command
     init        Initialize a working directory
