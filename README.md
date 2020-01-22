@@ -2,40 +2,37 @@
 
 # Ritchie-CLI
 
-Projeto criado para automatizar e simplicar suas tarefas do dia-a-dia transformando-as em linha de comando simples. O Ritchie é estruturado em decisões de arvore onde você pode criar seus próprios comandos e executar quando quiser, precisando somente criar suas formulas ou já usar as existentes. 
-
-Segue abaixo a sua arquitetura macro do Ritchie-CLI:  
-
+Project created to automate and simplify day-to-day tasks transformed into the simple command line. Ritchie is structured in tree decisions where you can create your own commands and execute when you want, just needing to create your formulas or use them as existing ones. 
 
 <p align="center">
   <img width="1191" height="631" src="docs/img/ritchie-cli-architecture.png">
 </p>
 
-## Pre-Requisitos
+## Prerequisite
 
-Antes de começar com o Ritchie verifique aos seguintes requisitos:
+Before starting with Ritchie, check the following requirements:
 
-* Possuir uma máquina `<Windows/Linux/Mac>`.
-* Verificar documentação das formulas do seu ritchie-cli.
-* Compreender algum tipo de linguagem de programação (Caso for criar suas próprias fórmulas).
+* Owning a `<Windows / Linux / Mac>` machine.
+* Check documentation of your ritchie-cli formulas.
+* Understand some type of programming language (If creating your own formulas).
 
-## Instalando Ritchie-CLI
+## How to install Ritchie-CLI
 
-Para instalar o Ritchie-CLI siga os seguintes passos:
+For install Ritchie-CLI follow the step-by-step:
 
-Instalando pelo script:
+Installing from the script:
 
 ```
 curl -fsSL -o install.sh http://ritchie-cli-bucket234376412767550.s3-website-sa-east-1.amazonaws.com/install.sh
 chmod +x install.sh
 ./install.sh linux bash (linux) ou ./install.sh linux zsh(mac)
 ```
-Instalando pelo [ Binaries ](Release.md)
+Installing from the [ Binaries ](Release.md)
 
-* Realizar download do Ritchie-CLI no seguinte link: 
+* Download Ritchie-CLI at the following link: 
 [ Binaries ](Release.md)
 
-Linux e macOS:
+Linux and macOS:
 ```
 $ chmod +x /path/to/Download/rit
 $ sudo mv /path/to/Download/rit /usr/local/bin
@@ -66,17 +63,17 @@ $ rit
 
 ```
 
-Se tudo ocorreu bem, você já consegue utilizar o Ritchie-CLI no seu prompt de comandos.
+If everything went well, you can now use Ritchie-CLI in your command prompt.
 
 Windows:
 ```
 <install_command>
 ```
-## Usando Ritchie-CLI
+## How to use Ritchie-CLI
 
-Para usar o Ritchie-CLI siga os seguintes passos:
+For use the Ritchie-CLI follow the step-by-step:
 
-1. Realizar login para o Ritchie-CLI identificar o usuario:
+1. Log in to the Ritchie-CLI to identify the user:
 
 ```
 $rit login
@@ -86,12 +83,12 @@ $rit login
     2020/01/10 13:52:41 Login successful!
 ```
 
-3. Habilitando auto-complete do Ritchie-CLI: 
+3. Enabling Ritchie-CLI auto-complete:
 
 ```
 $ source <(rit completion bash)
 ```
-4. Setando suas credenciais no Ritchie-CLI:
+4. Setting your Ritchie-CLI credentials:
 
 ```
 $ rit set credential 
@@ -115,7 +112,7 @@ $ rit set credential
 
 ```
 
-5. Realizando download das formulas criadas no repositorio:
+5. Downloading the formulas created in the repository:
 
 ```
 $ rit init
@@ -128,7 +125,7 @@ $ rit init
     2020/01/10 13:53:53 done.
 ```
 
-6. Utilizando uma formula existente (coffee)
+6. Using an existing formula (coffee):
 
 ```
 $ rit generate scaffold coffee 
@@ -142,7 +139,7 @@ $ rit generate scaffold coffee
     2020/01/10 14:09:38 ......
     2020/01/10 14:09:39 Your cappuccino coffee is ready, enjoy your trip
 ```
-6. Pedindo ajuda com os comandos do Ritchie-CLI
+6. How to request help with Ritchie-CLI commands:
 
 ```
 $ rit generate -h
@@ -189,19 +186,18 @@ $ rit generate scaffold coffee
     2020/01/10 14:09:39 Your cappuccino coffee is ready, enjoy your trip
 ```
 
-## Contribuindo com suas formulas para o Ritchie-CLI
+## How to contribute your formulas to Ritchie-CLI
 
-Para contribuir com o Ritchie-CLI (Formulas), siga os seguintes passos:
+To contribute to the Ritchie-CLI (Formulas), follow steps-by-step:
 
-1. Fork deste repositorio.[ Repositorio ritchie-cli](https://github.com/ZupIT/ritchie-cli)
-2. Criar uma branch: `git checkout -b <branch_name>`.
-3. Aprender como criar formulas para o Ritchie [Como Criar Formulas (Ritchie-CLI)](https://github.com/ZupIT/ritchie-formulas/blob/master/README.md)
-4. Crie sua(s) formula(s) e realize o commit da(s) mesma(s): `git commit -m '<commit_message>'`
-5. Realize o Push para sua branch: `git push origin <project_name>/<location>`
-6. Realizar pull request.
+1. Fork the repository.[Ritchie-CLI](https://github.com/ZupIT/ritchie-cli)
+2. Create a branch: `git checkout -b <branch_name>`.
+3. Learn [how to create formulas for Ritchie-CLI](https://github.com/ZupIT/ritchie-formulas/blob/master/README.md)
+4. Create your formulas and commit: `git commit -m '<commit_message>'`
+5. Push your branch: `git push origin <project_name>/<location>`
+6. Make pull request.
 
-
-## Contribuidores
+## Contributors
 
 * [@sandokandias](https://github.com/sandokandias) 
 * [@marcosgmgm](https://github.com/marcosgmgm) 
