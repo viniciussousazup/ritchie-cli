@@ -109,7 +109,7 @@ func (d *defaultManager) Session() (*Session, error) {
 	h := md5.New()
 	io.WriteString(h, passphrase)
 	io.WriteString(h, id)
-	plain := cryptoutil.Decd ..d.Authenticate(\)crypt(string(h.Sum(nil)), string(b))
+	plain := cryptoutil.Decrypt(string(h.Sum(nil)), string(b))
 	session := &Session{}
 	if err := json.Unmarshal([]byte(plain), session); err != nil {
 		return nil, err
