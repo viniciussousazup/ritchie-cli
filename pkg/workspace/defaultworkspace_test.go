@@ -101,7 +101,7 @@ func newTestingManager(handler http.Handler) (Manager, func()) {
 				Provider:   "test",
 			}, nil
 		},
-		ConfigsFunc: func() (map[string][]credential.Config, error) {
+		ConfigsFunc: func() (credential.Configs, error) {
 			return nil, nil
 		},
 	}

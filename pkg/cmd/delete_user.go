@@ -27,23 +27,23 @@ func NewDeleteUserCmd(userManager user.Manager) *cobra.Command {
 
 func (o *deleteUserCmd) prompt() error {
 
-	username, err := prompt.String("Username: ", true)
+	un, err := prompt.String("Username: ", true)
 	if err != nil {
 		return err
 	}
-	email, err := prompt.String("Email: ", true)
+	e, err := prompt.String("Email: ", true)
 	if err != nil {
 		return err
 	}
 
 	u := &user.Definition{
-		Email:    email,
-		Username: username,
+		Email:    e,
+		Username: un,
 	}
 
-	if deleteUser, err := prompt.ListBool("Are you sure want to delete this user?", []string{"yes", "no"}); err != nil {
+	if d, err := prompt.ListBool("Are you sure want to delete this user?", []string{"yes", "no"}); err != nil {
 		return err
-	} else if !deleteUser {
+	} else if !d {
 		return nil
 	}
 

@@ -44,8 +44,24 @@ type DefaultManager struct {
 }
 
 // NewDefaultManager creates a default instance of Manager interface
-func NewDefaultManager(ritchieHome, serverURL string, httpClient *http.Client, treeManager tree.Manager, gitRepoManager git.RepoManager, credManager credential.Manager, loginManager login.Manager) *DefaultManager {
-	return &DefaultManager{ritchieHome, serverURL, httpClient, treeManager, gitRepoManager, credManager, loginManager}
+func NewDefaultManager(
+	ritchieHome string,
+	serverUrl string,
+	c *http.Client,
+	t tree.Manager,
+	g git.RepoManager,
+	cr credential.Manager,
+	l login.Manager,
+) *DefaultManager {
+	return &DefaultManager{
+		ritchieHome:    ritchieHome,
+		serverURL:      serverUrl,
+		httpClient:     c,
+		treeManager:    t,
+		gitRepoManager: g,
+		credManager:    cr,
+		loginManager:   l,
+	}
 }
 
 // CheckWorkingDir default implementation of function Manager.CheckWorkingDir
@@ -97,37 +113,13 @@ func (d *DefaultManager) InitWorkingDir() error {
 
 		switch frm.Provider {
 		case "github":
-			secret, err := d.credManager.Get(frm.Provider)
+			err := d.gitFormula(frm)
 			if err != nil {
 				return err
 			}
-
-			frmpath := fmt.Sprintf(formula.PathPattern, d.ritchieHome, "")
-
-			opt := &git.Options{
-				Credential: &git.Credential{
-					Username: secret.Credential[usernameKey],
-					Token:    secret.Credential[tokenKey],
-				},
-				URL: frm.URL,
-			}
-
-			if fileutil.Exists(frmpath) {
-				log.Println("Pull formulas...")
-				err = d.gitRepoManager.Pull(frmpath, opt)
-				if err != nil && err.Error() != errAlreadyUpToDate.Error() {
-					return err
-				}
-			} else {
-				log.Println("Clone formulas...")
-				err = d.gitRepoManager.PlainClone(frmpath, opt)
-				if err != nil {
-					return err
-				}
-			}
 		case "s3":
 			destPath := fmt.Sprintf(d.ritchieHome+"%s", formula.DirFormula)
-			zipFile,err := downloadZipProject(frm.URL,destPath)
+			zipFile, err := downloadZipProject(frm.URL, destPath)
 			if err != nil {
 				return err
 			}
@@ -152,7 +144,39 @@ func (d *DefaultManager) InitWorkingDir() error {
 	return nil
 }
 
-func downloadZipProject(url,destPath  string) (string, error) {
+func (d *DefaultManager) gitFormula(frm *formulaConfig) error {
+	secret, err := d.credManager.Get(frm.Provider)
+	if err != nil {
+		return err
+	}
+
+	path := fmt.Sprintf(formula.PathPattern, d.ritchieHome, "")
+
+	opt := &git.Options{
+		Credential: &git.Credential{
+			Username: secret.Credential[usernameKey],
+			Token:    secret.Credential[tokenKey],
+		},
+		URL: frm.URL,
+	}
+
+	if fileutil.Exists(path) {
+		log.Println("Pull formulas...")
+		err = d.gitRepoManager.Pull(path, opt)
+		if err != nil && err.Error() != errAlreadyUpToDate.Error() {
+			return nil
+		}
+	} else {
+		log.Println("Clone formulas...")
+		err = d.gitRepoManager.PlainClone(path, opt)
+		if err != nil {
+			return nil
+		}
+	}
+	return nil
+}
+
+func downloadZipProject(url, destPath string) (string, error) {
 	log.Println("Starting download zip file.")
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -164,7 +188,7 @@ func downloadZipProject(url,destPath  string) (string, error) {
 		return "", err
 	}
 	defer resp.Body.Close()
-	file := fmt.Sprintf("%s.zip",destPath)
+	file := fmt.Sprintf("%s.zip", destPath)
 	out, err := os.Create(file)
 	if err != nil {
 		return "", err
@@ -181,7 +205,7 @@ func downloadZipProject(url,destPath  string) (string, error) {
 func unzipFile(filename, destPath string) error {
 	log.Println("Unzip files S3...")
 
-	fileutil.CreateIfNotExists(destPath, 0655)
+	_ = fileutil.CreateIfNotExists(destPath, 0655)
 	err := fileutil.Unzip(filename, destPath)
 	if err != nil {
 		return err

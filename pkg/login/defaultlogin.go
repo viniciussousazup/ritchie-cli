@@ -28,8 +28,8 @@ type defaultManager struct {
 }
 
 // NewDefaultManager creates a default instance of Manager interface
-func NewDefaultManager(homePath, serverURL string, httpClient *http.Client) *defaultManager {
-	return &defaultManager{homePath, serverURL, httpClient}
+func NewDefaultManager(homePath, serverURL string, c *http.Client) *defaultManager {
+	return &defaultManager{homePath, serverURL, c}
 }
 
 func (d *defaultManager) Authenticate(cred *Credential) error {

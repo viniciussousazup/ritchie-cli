@@ -25,12 +25,12 @@ func NewSetCredentialCmd(m credential.Manager) *cobra.Command {
 		Short: "Set provider credential",
 		Long:  `Set credentials for Github, Gitlab, AWS, etc.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return o.prompt(args)
+			return o.prompt()
 		},
 	}
 }
 
-func (s *SetCredentialCmd) prompt(args []string) error {
+func (s *SetCredentialCmd) prompt() error {
 	cfg, err := s.manager.Configs()
 	if err != nil {
 		return err
@@ -40,20 +40,20 @@ func (s *SetCredentialCmd) prompt(args []string) error {
 		providers = append(providers, k)
 	}
 
-	typ, err := prompt.List("Credential [Type]: ", []string{credential.Me, credential.Admin})
+	typ, err := prompt.List("Type: ", []string{credential.Me, credential.Admin})
 	if err != nil {
 		return err
 	}
 
 	username := "me"
 	if typ == credential.Admin {
-		username, err = prompt.String("Credential [Username of the Organization]: ", true)
+		username, err = prompt.String("Set credential for user [username] ", true)
 		if err != nil {
 			return err
 		}
 	}
 
-	provider, err := prompt.List("Credential [Provider]: ", providers)
+	provider, err := prompt.List("Provider: ", providers)
 	if err != nil {
 		return err
 	}
@@ -64,7 +64,7 @@ func (s *SetCredentialCmd) prompt(args []string) error {
 		var val string
 		var err error
 		fname := strings.ToLower(f.Field)
-		lab := fmt.Sprintf("Credential [%s]: ", f.Field)
+		lab := fmt.Sprintf("%s: ", strings.Title(f.Field))
 		if f.Type == prompt.PasswordType {
 			val, err = prompt.Password(lab)
 		} else {

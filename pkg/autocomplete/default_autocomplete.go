@@ -18,13 +18,13 @@ type defaultManager struct {
 	loginManager login.Manager
 }
 
-func NewDefaultManager(serverURL string, httpClient *http.Client, loginManager login.Manager) *defaultManager {
-	return &defaultManager{serverURL, httpClient, loginManager}
+func NewDefaultManager(serverURL string, c *http.Client, l login.Manager) *defaultManager {
+	return &defaultManager{serverURL: serverURL, httpClient: c, loginManager: l}
 }
 
 func (d *defaultManager) Handle(shellName string) (string, error) {
 
-	if !sliceutil.Contains(getSupportedAutocomplete(), shellName) {
+	if !sliceutil.Contains(supportedAutocomplete(), shellName) {
 		return "", errors.New("autocomplete for this terminal is not supported")
 	}
 
@@ -46,6 +46,6 @@ func (d *defaultManager) Handle(shellName string) (string, error) {
 	return string(bodyBytes), nil
 }
 
-func getSupportedAutocomplete() []string {
+func supportedAutocomplete() []string {
 	return []string{"bash", "zsh"}
 }

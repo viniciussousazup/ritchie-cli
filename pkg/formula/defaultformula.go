@@ -19,12 +19,12 @@ import (
 // DefaultManager is a default implementation of Manager interface
 type DefaultManager struct {
 	ritchieHome  string
-	envResolvers map[string]env.Resolver
+	envResolvers env.Resolvers
 }
 
 // NewDefaultManager creates a default instance of Manager interface
-func NewDefaultManager(ritchieHome string, envResolvers map[string]env.Resolver) *DefaultManager {
-	return &DefaultManager{ritchieHome, envResolvers}
+func NewDefaultManager(ritchieHome string, ee env.Resolvers) *DefaultManager {
+	return &DefaultManager{ritchieHome: ritchieHome, envResolvers: ee}
 }
 
 //Run default implementation of function Manager.Run

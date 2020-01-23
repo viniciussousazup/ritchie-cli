@@ -26,8 +26,8 @@ type DefaultManager struct {
 }
 
 // NewDefaultManager creates a default instance of Manager interface
-func NewDefaultManager(ritchieHome, serverURL string, httpClient *http.Client, loginManager login.Manager) *DefaultManager {
-	return &DefaultManager{ritchieHome, serverURL, httpClient, loginManager}
+func NewDefaultManager(ritchieHome, serverURL string, c *http.Client, l login.Manager) *DefaultManager {
+	return &DefaultManager{ritchieHome: ritchieHome, serverURL: serverURL, httpClient: c, loginManager: l}
 }
 
 // GetLocalTree default implementation of function Manager.GetLocalTree
@@ -42,7 +42,7 @@ func (d *DefaultManager) GetLocalTree() (*Representation, error) {
 	}
 
 	treecmd := &Representation{}
-	err = json.Unmarshal([]byte(file), treecmd)
+	err = json.Unmarshal(file, treecmd)
 	if err != nil {
 		return nil, err
 	}

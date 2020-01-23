@@ -23,7 +23,7 @@ var _ Manager = &ManagerMock{}
 //
 //         // make and configure a mocked Manager
 //         mockedManager := &ManagerMock{
-//             ConfigsFunc: func() (map[string][]Config, error) {
+//             ConfigsFunc: func() (Configs, error) {
 // 	               panic("mock out the Configs method")
 //             },
 //             GetFunc: func(provider string) (*Secret, error) {
@@ -40,7 +40,7 @@ var _ Manager = &ManagerMock{}
 //     }
 type ManagerMock struct {
 	// ConfigsFunc mocks the Configs method.
-	ConfigsFunc func() (map[string][]Config, error)
+	ConfigsFunc func() (Configs, error)
 
 	// GetFunc mocks the Get method.
 	GetFunc func(provider string) (*Secret, error)
@@ -67,7 +67,7 @@ type ManagerMock struct {
 }
 
 // Configs calls ConfigsFunc.
-func (mock *ManagerMock) Configs() (map[string][]Config, error) {
+func (mock *ManagerMock) Configs() (Configs, error) {
 	if mock.ConfigsFunc == nil {
 		panic("ManagerMock.ConfigsFunc: method is nil but Manager.Configs was just called")
 	}

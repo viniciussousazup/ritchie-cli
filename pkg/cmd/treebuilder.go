@@ -18,8 +18,7 @@ import (
 
 var (
 	coreCmds = []string{
-		"root_init", "root_set",
-		"root_version", "root_set_credential", "root_create",
+		"root_init", "root_set", "root_set_credential", "root_create",
 		"root_create_user", "root_delete", "root_delete_user",
 		"root_help", "root_login", "root_completion",
 		"root_completion_zsh", "root_completion_bash"}
@@ -37,8 +36,24 @@ type TreeBuilder struct {
 }
 
 // NewTreeBuilder creates new builder instance
-func NewTreeBuilder(treeManager tree.Manager, workspaceManager workspace.Manager, credManager credential.Manager, formulaManager formula.Manager, loginManager login.Manager, userManager user.Manager, autocompleteManager autocomplete.Manager) *TreeBuilder {
-	return &TreeBuilder{treeManager, workspaceManager, credManager, formulaManager, loginManager, userManager, autocompleteManager}
+func NewTreeBuilder(
+	t tree.Manager,
+	w workspace.Manager,
+	c credential.Manager,
+	f formula.Manager,
+	l login.Manager,
+	u user.Manager,
+	a autocomplete.Manager,
+) *TreeBuilder {
+	return &TreeBuilder{
+		treeManager:         t,
+		workspaceManager:    w,
+		credManager:         c,
+		formulaManager:      f,
+		loginManager:        l,
+		userManager:         u,
+		autocompleteManager: a,
+	}
 }
 
 // BuildTree builds the tree of the commands
@@ -49,7 +64,6 @@ func (b *TreeBuilder) BuildTree() (*cobra.Command, error) {
 	createCmd := NewCreateCmd()
 	deleteCmd := NewDeleteCmd()
 	loginCmd := NewLoginCmd(b.loginManager)
-	versionCmd := NewVersionCmd()
 	setCredentialCmd := NewSetCredentialCmd(b.credManager)
 	createUserCmd := NewCreateUserCmd(b.userManager)
 	deleteUserCmd := NewDeleteUserCmd(b.userManager)
@@ -60,7 +74,7 @@ func (b *TreeBuilder) BuildTree() (*cobra.Command, error) {
 	setCmd.AddCommand(setCredentialCmd)
 	createCmd.AddCommand(createUserCmd)
 	deleteCmd.AddCommand(deleteUserCmd)
-	rootCmd.AddCommand(initCmd, versionCmd, setCmd, createCmd, deleteCmd, loginCmd, autocompleteCmd)
+	rootCmd.AddCommand(initCmd, setCmd, createCmd, deleteCmd, loginCmd, autocompleteCmd)
 
 	treecmd, err := b.treeManager.GetLocalTree()
 	if err != nil {
