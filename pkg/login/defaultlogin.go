@@ -2,10 +2,12 @@ package login
 
 import (
 	"bytes"
+	"crypto/md5"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/denisbrodbeck/machineid"
+	"io"
 	"net/http"
 	"os"
 
@@ -68,7 +70,10 @@ func (d *defaultManager) Authenticate(cred *Credential) error {
 		if err != nil {
 			return err
 		}
-		cipher := cryptoutil.Encrypt(passphrase, id, string(b))
+		h := md5.New()
+		io.WriteString(h, passphrase)
+		io.WriteString(h, id)
+		cipher := cryptoutil.Encrypt(string(h.Sum(nil)), string(b))
 		sessFilePath := fmt.Sprintf(sessionFilePattern, d.homePath)
 		err = fileutil.WriteFile(sessFilePath, []byte(cipher))
 		if err != nil {
@@ -101,7 +106,10 @@ func (d *defaultManager) Session() (*Session, error) {
 	if err != nil {
 		return nil, err
 	}
-	plain := cryptoutil.Decrypt(passphrase, id, string(b))
+	h := md5.New()
+	io.WriteString(h, passphrase)
+	io.WriteString(h, id)
+	plain := cryptoutil.Decd ..d.Authenticate(\)crypt(string(h.Sum(nil)), string(b))
 	session := &Session{}
 	if err := json.Unmarshal([]byte(plain), session); err != nil {
 		return nil, err
