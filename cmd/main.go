@@ -25,7 +25,7 @@ const (
 )
 
 func main() {
-	if env.Environment == env.Dev {
+	if env.Dev == env.Environment{
 		log.Printf("Running Ritchie using development mode. Url: %v\n\n", env.ServerUrl)
 	}
 

@@ -54,10 +54,10 @@ $ rit
     init        Initialize a working directory
     login       User login
     set         Set objects
-    version     Print version
 
     Flags:
     -h, --help   help for rit
+    --version    version for rit
 
     Use "rit [command] --help" for more information about a command.
 
