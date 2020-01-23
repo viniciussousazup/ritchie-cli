@@ -1,20 +1,8 @@
-# [ Planilha de Teste ](https://docs.google.com/spreadsheets/d/1fnfxnDMJxnjYJ-OLqZuGPVUhUQvyU9CLBCQl2-sPaTc/edit?usp=sharing)
-
 # Ritchie-CLI
 
-Project created to automate and simplify day-to-day tasks transformed into the simple command line. Ritchie is structured in tree decisions where you can create your own commands and execute when you want, just needing to create your formulas or use them as existing ones. 
+Transform your daily task into simple commands by using Ritchie-CLI. This tool uses tree decisions, so that you can create your own commands and execute when you want, just by using formulas or creating new ones. 
 
-<p align="center">
-  <img width="1191" height="631" src="docs/img/ritchie-cli-architecture.png">
-</p>
-
-## Prerequisite
-
-Before starting with Ritchie, check the following requirements:
-
-* Owning a `<Windows / Linux / Mac>` machine.
-* Check documentation of your ritchie-cli formulas.
-* Understand some type of programming language (If creating your own formulas).
+<img src="docs/img/ritchie-cli-architecture.png">
 
 ## How to install Ritchie-CLI
 
@@ -186,13 +174,13 @@ $ rit generate scaffold coffee
     2020/01/10 14:09:39 Your cappuccino coffee is ready, enjoy your trip
 ```
 
-## How to contribute your formulas to Ritchie-CLI
+## How to create formulas for Ritchie-CLI
 
-To contribute to the Ritchie-CLI (Formulas), follow steps-by-step:
+Follow steps-by-step:https://github.com/ZupIT/ritchie-formulas
 
-1. Fork the repository.[Ritchie-CLI](https://github.com/ZupIT/ritchie-cli)
+1. Fork the repository.[Ritchie-formulas](https://github.com/ZupIT/ritchie-formulas)
 2. Create a branch: `git checkout -b <branch_name>`.
-3. Learn [how to create formulas for Ritchie-CLI](https://github.com/ZupIT/ritchie-formulas/blob/master/README.md)
+3. Check our Ritchie-formulas [documentation](https://github.com/ZupIT/ritchie-formulas/blob/master/README.md).
 4. Create your formulas and commit: `git commit -m '<commit_message>'`
 5. Push your branch: `git push origin <project_name>/<location>`
 6. Make pull request.
