@@ -176,15 +176,11 @@ $ rit generate scaffold coffee
 
 ## How to create formulas for Ritchie-CLI
 
-* Check our ritchie-formulas [documentation](https://github.com/ZupIT/ritchie-formulas/blob/master/README.md).
+Follow steps-by-step:https://github.com/ZupIT/ritchie-formulas
 
-## How to contribute your formulas to Ritchie-CLI
-
-To contribute to the Ritchie-CLI (Formulas), follow steps-by-step:
-
-1. Fork the repository.[Ritchie-CLI](https://github.com/ZupIT/ritchie-cli)
+1. Fork the repository.[Ritchie-formulas](https://github.com/ZupIT/ritchie-formulas)
 2. Create a branch: `git checkout -b <branch_name>`.
-3. Learn [how to create formulas for Ritchie-CLI](https://github.com/ZupIT/ritchie-formulas/blob/master/README.md)
+3. Check our Ritchie-formulas [documentation](https://github.com/ZupIT/ritchie-formulas/blob/master/README.md).
 4. Create your formulas and commit: `git commit -m '<commit_message>'`
 5. Push your branch: `git push origin <project_name>/<location>`
 6. Make pull request.
