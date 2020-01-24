@@ -36,7 +36,7 @@ var _ Manager = &ManagerMock{}
 //     }
 type ManagerMock struct {
 	// AuthenticateFunc mocks the Authenticate method.
-	AuthenticateFunc func(cred *Credential) error
+	AuthenticateFunc func(organization string) error
 
 	// SessionFunc mocks the Session method.
 	SessionFunc func() (*Session, error)
@@ -45,8 +45,8 @@ type ManagerMock struct {
 	calls struct {
 		// Authenticate holds details about calls to the Authenticate method.
 		Authenticate []struct {
-			// Cred is the cred argument value.
-			Cred *Credential
+			// Organization argument value.
+			Organization string
 		}
 		// Session holds details about calls to the Session method.
 		Session []struct {
@@ -55,29 +55,29 @@ type ManagerMock struct {
 }
 
 // Authenticate calls AuthenticateFunc.
-func (mock *ManagerMock) Authenticate(cred *Credential) error {
+func (mock *ManagerMock) Authenticate(organization string) error {
 	if mock.AuthenticateFunc == nil {
 		panic("ManagerMock.AuthenticateFunc: method is nil but Manager.Authenticate was just called")
 	}
 	callInfo := struct {
-		Cred *Credential
+		Organization string
 	}{
-		Cred: cred,
+		Organization: organization,
 	}
 	lockManagerMockAuthenticate.Lock()
 	mock.calls.Authenticate = append(mock.calls.Authenticate, callInfo)
 	lockManagerMockAuthenticate.Unlock()
-	return mock.AuthenticateFunc(cred)
+	return mock.AuthenticateFunc(organization)
 }
 
 // AuthenticateCalls gets all the calls that were made to Authenticate.
 // Check the length with:
 //     len(mockedManager.AuthenticateCalls())
 func (mock *ManagerMock) AuthenticateCalls() []struct {
-	Cred *Credential
+	Organization string
 } {
 	var calls []struct {
-		Cred *Credential
+		Organization string
 	}
 	lockManagerMockAuthenticate.RLock()
 	calls = mock.calls.Authenticate

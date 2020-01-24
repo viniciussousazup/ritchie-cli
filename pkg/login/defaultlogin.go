@@ -1,21 +1,32 @@
 package login
 
 import (
-	"bytes"
+	"context"
+	"crypto/md5"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/ZupIT/ritchie-cli/pkg/crypto/cryptoutil"
+	"github.com/ZupIT/ritchie-cli/pkg/env"
+	"github.com/ZupIT/ritchie-cli/pkg/file/fileutil"
+	oidc "github.com/coreos/go-oidc"
 	"github.com/denisbrodbeck/machineid"
+	"golang.org/x/oauth2"
+	"io"
+	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
-
-	"github.com/ZupIT/ritchie-cli/pkg/crypto/cryptoutil"
-	"github.com/ZupIT/ritchie-cli/pkg/file/fileutil"
+	"os/exec"
+	"runtime"
+	"time"
 )
 
 const (
-	urlPattern         = "%s/login"
 	sessionFilePattern = "%s/.session"
+
+	callbackUrl = "http://localhost:8888/ritchie/callback"
+	providerUrl = "%s/oauth"
 
 	// AES passphrase
 	passphrase = "zYtBIK67fCmhrU0iUbPQ1Cf9"
@@ -32,60 +43,152 @@ func NewDefaultManager(homePath, serverURL string, httpClient *http.Client) *def
 	return &defaultManager{homePath, serverURL, httpClient}
 }
 
-func (d *defaultManager) Authenticate(cred *Credential) error {
-	b, err := json.Marshal(&cred)
+func (d *defaultManager) Authenticate(organization string) error {
+	providerConfig, err := getProviderConfig(organization)
 	if err != nil {
 		return err
 	}
-
-	url := fmt.Sprintf(urlPattern, d.serverURL)
-	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(b))
+	ctx := context.Background()
+	provider, err := oidc.NewProvider(ctx, providerConfig.Url)
 	if err != nil {
 		return err
 	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("x-org", cred.Organization)
-	resp, err := d.httpClient.Do(req)
-
+	oauth2Config := oauth2.Config{
+		ClientID:     providerConfig.ClientId,
+		ClientSecret: "",
+		RedirectURL:  callbackUrl,
+		// Discovery returns the OAuth2 endpoints.
+		Endpoint: provider.Endpoint(),
+		// "openid" is a required scope for OpenID Connect flows.
+		Scopes: []string{oidc.ScopeOpenID, "profile", "email"},
+	}
+	state := "somestate"
+	err = openBrowser(oauth2Config.AuthCodeURL(state))
 	if err != nil {
 		return err
 	}
+	http.HandleFunc("/ritchie/callback", d.handler(provider, state, organization, oauth2Config, ctx))
+	log.Fatal(http.ListenAndServe("localhost:8888", nil))
 
-	defer resp.Body.Close()
+	return nil
+}
 
-	switch resp.StatusCode {
-	case 200:
-		session := &Session{}
-		json.NewDecoder(resp.Body).Decode(session)
-		session.Username = cred.Username
-		session.Organization = cred.Organization
-		b, err := json.Marshal(session)
-		if err != nil {
-			return err
+func (d *defaultManager) handler(provider *oidc.Provider, state, organization string, oauth2Config oauth2.Config, ctx context.Context) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		oidcConfig := &oidc.Config{
+			ClientID: oauth2Config.ClientID,
 		}
-		id, err := machineid.ID()
-		if err != nil {
-			return err
+		verifier := provider.Verifier(oidcConfig)
+		if r.URL.Query().Get("state") != state {
+			http.Error(w, "state did not match", http.StatusBadRequest)
+			go stopServer()
 		}
-		cipher := cryptoutil.Encrypt(passphrase, id, string(b))
-		sessFilePath := fmt.Sprintf(sessionFilePattern, d.homePath)
-		err = fileutil.WriteFile(sessFilePath, []byte(cipher))
+
+		oauth2Token, err := oauth2Config.Exchange(ctx, r.URL.Query().Get("code"))
 		if err != nil {
-			return err
+			http.Error(w, "Failed to exchange token: "+err.Error(), http.StatusInternalServerError)
+			go stopServer()
 		}
-		err = os.Chmod(sessFilePath, 0600)
+		rawIDToken, ok := oauth2Token.Extra("id_token").(string)
+		if !ok {
+			http.Error(w, "No id_token field in oauth2 token.", http.StatusInternalServerError)
+			go stopServer()
+		}
+		idToken, err := verifier.Verify(ctx, rawIDToken)
 		if err != nil {
-			return err
+			http.Error(w, "Failed to verify ID Token: "+err.Error(), http.StatusInternalServerError)
+			go stopServer()
 		}
-		return nil
-	case 401:
-		return ErrBadCredential
-	case 503:
-		return ErrServiceUnavailable
+		token := oauth2Token.AccessToken
+		user := struct {
+			Email string `json:"email"`
+			Username string `json:"preferred_username"`
+		}{}
+		idToken.Claims(&user)
+		err = d.createSession(token, user.Username, organization)
+		if err != nil {
+			http.Error(w, "Failed to create session: "+err.Error(), http.StatusInternalServerError)
+			go stopServer()
+		}
+		w.Write([]byte(`<h1>Login ok, return to Rit CLI!</h1>`))
+		log.Printf("Login ok!")
+		go stopServer()
+	})
+}
+
+func (d *defaultManager) createSession(token, username, organization string) error {
+	session := &Session{
+		AccessToken:  	token,
+		Organization: 	organization,
+		Username:    	username,
+	}
+
+	b, err := json.Marshal(session)
+	if err != nil {
+		return err
+	}
+	id, err := machineid.ID()
+	if err != nil {
+		return err
+	}
+	h := md5.New()
+	io.WriteString(h, passphrase)
+	io.WriteString(h, id)
+	cipher := cryptoutil.Encrypt(string(h.Sum(nil)), string(b))
+	sessFilePath := fmt.Sprintf(sessionFilePattern, d.homePath)
+	err = fileutil.WriteFile(sessFilePath, []byte(cipher))
+	if err != nil {
+		return err
+	}
+	err = os.Chmod(sessFilePath, 0600)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func stopServer() {
+	time.Sleep(5 * time.Second)
+	os.Exit(0)
+}
+
+func openBrowser(url string) error {
+	var err error
+	switch runtime.GOOS {
+	case "linux":
+		err = exec.Command("xdg-open", url).Start()
+	case "windows":
+		err = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
+	case "darwin":
+		err = exec.Command("open", url).Start()
 	default:
-		return ErrUnknown
+		err = nil
 	}
+	return err
+}
+
+func getProviderConfig(organization string) (ProviderConfig, error) {
+	var provideConfig ProviderConfig
+	url := fmt.Sprintf(providerUrl, env.ServerUrl)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return provideConfig, fmt.Errorf("Failed to getProviderConfig for org %s. \n%v", organization, err)
+	}
+	req.Header.Set("x-org", organization)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return provideConfig, err
+	}
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		return provideConfig, fmt.Errorf("Failed to call url. %v for org %s. Status code: %d\n", url, organization, resp.StatusCode)
+	}
+	defer resp.Body.Close()
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return provideConfig, fmt.Errorf("Failed parse response to body: %s\n", string(bodyBytes))
+	}
+	json.Unmarshal(bodyBytes, &provideConfig)
+	return provideConfig, nil
 }
 
 func (d *defaultManager) Session() (*Session, error) {
@@ -101,7 +204,10 @@ func (d *defaultManager) Session() (*Session, error) {
 	if err != nil {
 		return nil, err
 	}
-	plain := cryptoutil.Decrypt(passphrase, id, string(b))
+	h := md5.New()
+	io.WriteString(h, passphrase)
+	io.WriteString(h, id)
+	plain := cryptoutil.Decrypt(string(h.Sum(nil)), string(b))
 	session := &Session{}
 	if err := json.Unmarshal([]byte(plain), session); err != nil {
 		return nil, err
