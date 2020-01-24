@@ -29,7 +29,6 @@ type Session struct {
 type ProviderConfig struct {
 	ConfigUrl		string `json:"configUrl"`
 	ClientId		string `json:"clientId"`
-	ClientSecret	string `json:"clientSecret"`
 }
 
 //go:generate $GOPATH/bin/moq -out mock_loginmanager.go . Manager

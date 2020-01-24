@@ -48,7 +48,7 @@ func (d *defaultManager) Authenticate(organization string) error {
 	}
 	oauth2Config := oauth2.Config{
 		ClientID:     providerConfig.ClientId,
-		ClientSecret: providerConfig.ClientSecret,
+		ClientSecret: "",
 		RedirectURL:  CallbackUrl,
 		// Discovery returns the OAuth2 endpoints.
 		Endpoint: provider.Endpoint(),
@@ -103,7 +103,7 @@ func (d *defaultManager) handler(provider *oidc.Provider, state, organization st
 			http.Error(w, "Failed to create session: "+err.Error(), http.StatusInternalServerError)
 			go stopServer()
 		}
-		w.Write([]byte("Login ok, return to Rit CLI!"))
+		w.Write([]byte(`<h1>Login ok, return to Rit CLI!</h1>`))
 		log.Printf("Login ok!")
 		go stopServer()
 	})
@@ -163,9 +163,8 @@ func openBrowser(url string) error {
 func getProviderConfig(organization string) ProviderConfig {
 	//TODO: put get OAuth config in server
 	return ProviderConfig{
-		ConfigUrl:    "https://ritchie-keycloak.itiaws.dev/auth/realms/ritchie",
-		ClientId:     "user-login",
-		ClientSecret: "71da7105-477b-4854-ae6c-1263abf7ea50",
+		ConfigUrl:    "https://ritchie-keycloak.zup.io/auth/realms/ritchie",
+		ClientId:     "oauth",
 	}
 
 }

@@ -3,13 +3,12 @@ package env
 const (
 	// Credential resolver
 	Credential  = "CREDENTIAL"
-	Dev			= "dev"
 	Prod		= "prod"
 )
 
 var (
 	//Url Server
-	ServerUrl = "https://ritchie-server.itiaws.dev"
+	ServerUrl = "https://ritchie-server.zup.io"
 	// Environment
 	Environment = Prod
 )
