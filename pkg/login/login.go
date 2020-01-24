@@ -15,12 +15,9 @@ var (
 	ErrUnknown = errors.New("Unknown error. Please, try again")
 )
 
-// Credential type that represents a credential of the organization
-type Credential struct {
-	Username     string `json:"username"`
-	Password     string `json:"password"`
-	Organization string `json:"organization"`
-}
+const (
+	CallbackUrl = "http://localhost:8888/ritchie/callback"
+)
 
 // Session type that represents a session of the user login
 type Session struct {
@@ -29,10 +26,16 @@ type Session struct {
 	Username     string `json:"username"`
 }
 
+type ProviderConfig struct {
+	ConfigUrl		string `json:"configUrl"`
+	ClientId		string `json:"clientId"`
+	ClientSecret	string `json:"clientSecret"`
+}
+
 //go:generate $GOPATH/bin/moq -out mock_loginmanager.go . Manager
 
 // Manager is an interface that we can use to perform login operations
 type Manager interface {
-	Authenticate(cred *Credential) error
+	Authenticate(organization string) error
 	Session() (*Session, error)
 }
