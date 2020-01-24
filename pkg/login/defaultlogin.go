@@ -49,7 +49,7 @@ func (d *defaultManager) Authenticate(organization string) error {
 		return err
 	}
 	ctx := context.Background()
-	provider, err := oidc.NewProvider(ctx, providerConfig.ConfigUrl)
+	provider, err := oidc.NewProvider(ctx, providerConfig.Url)
 	if err != nil {
 		return err
 	}
