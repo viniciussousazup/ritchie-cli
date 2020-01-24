@@ -15,10 +15,6 @@ var (
 	ErrUnknown = errors.New("Unknown error. Please, try again")
 )
 
-const (
-	CallbackUrl = "http://localhost:8888/ritchie/callback"
-)
-
 // Session type that represents a session of the user login
 type Session struct {
 	AccessToken  string `json:"access_token"`

@@ -16,12 +16,12 @@ func TestMain(m *testing.M) {
 
 func TestEncrypt(t *testing.T) {
 	is := is.New(t)
-	ciphtxt := Encrypt(ciphkey, "FBA4E319-65EF-542B-8243-6598B0BDC3AF", "radiation")
-	is.Equal(ciphtxt, "d2vEmqxP7J1A+TZIpL2TSULqaqq6leqvAis6Lbv4U1s1dmuddZ78T4nBfrgym39A0uADC6FJqICJ1ktWy9JhPuSrqVd7Gl7537YCObLEZcJ+")
+	ciphtxt := Encrypt(ciphkey, "radiation")
+	is.Equal(ciphtxt, "Q0jhx4gItMsD")
 }
 
 func TestDecrypt(t *testing.T) {
 	is := is.New(t)
-	plaintxt := Decrypt(ciphkey, "FBA4E319-65EF-542B-8243-6598B0BDC3AF", "d2vEmqxP7J1A+TZIpL2TSULqaqq6leqvAis6Lbv4U1s1dmuddZ78T4nBfrgym39A0uADC6FJqICJ1ktWy9JhPuSrqVd7Gl7537YCObLEZcJ+")
+	plaintxt := Decrypt(ciphkey, "Q0jhx4gItMsD")
 	is.Equal(plaintxt, "radiation")
 }

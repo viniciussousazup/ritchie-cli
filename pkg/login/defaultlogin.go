@@ -7,11 +7,13 @@ import (
 	"errors"
 	"fmt"
 	"github.com/ZupIT/ritchie-cli/pkg/crypto/cryptoutil"
+	"github.com/ZupIT/ritchie-cli/pkg/env"
 	"github.com/ZupIT/ritchie-cli/pkg/file/fileutil"
 	oidc "github.com/coreos/go-oidc"
 	"github.com/denisbrodbeck/machineid"
 	"golang.org/x/oauth2"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -21,8 +23,10 @@ import (
 )
 
 const (
-	urlPattern         = "%s/login"
 	sessionFilePattern = "%s/.session"
+
+	callbackUrl = "http://localhost:8888/ritchie/callback"
+	providerUrl = "%s/oauth"
 
 	// AES passphrase
 	passphrase = "zYtBIK67fCmhrU0iUbPQ1Cf9"
@@ -40,7 +44,10 @@ func NewDefaultManager(homePath, serverURL string, httpClient *http.Client) *def
 }
 
 func (d *defaultManager) Authenticate(organization string) error {
-	providerConfig := getProviderConfig(organization)
+	providerConfig, err := getProviderConfig(organization)
+	if err != nil {
+		return err
+	}
 	ctx := context.Background()
 	provider, err := oidc.NewProvider(ctx, providerConfig.ConfigUrl)
 	if err != nil {
@@ -49,7 +56,7 @@ func (d *defaultManager) Authenticate(organization string) error {
 	oauth2Config := oauth2.Config{
 		ClientID:     providerConfig.ClientId,
 		ClientSecret: "",
-		RedirectURL:  CallbackUrl,
+		RedirectURL:  callbackUrl,
 		// Discovery returns the OAuth2 endpoints.
 		Endpoint: provider.Endpoint(),
 		// "openid" is a required scope for OpenID Connect flows.
@@ -160,13 +167,28 @@ func openBrowser(url string) error {
 	return err
 }
 
-func getProviderConfig(organization string) ProviderConfig {
-	//TODO: put get OAuth config in server
-	return ProviderConfig{
-		ConfigUrl:    "https://ritchie-keycloak.zup.io/auth/realms/ritchie",
-		ClientId:     "oauth",
+func getProviderConfig(organization string) (ProviderConfig, error) {
+	var provideConfig ProviderConfig
+	url := fmt.Sprintf(providerUrl, env.ServerUrl)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return provideConfig, fmt.Errorf("Failed to getProviderConfig for org %s. \n%v", organization, err)
 	}
-
+	req.Header.Set("x-org", organization)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return provideConfig, err
+	}
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		return provideConfig, fmt.Errorf("Failed to call url. %v for org %s. Status code: %d\n", url, organization, resp.StatusCode)
+	}
+	defer resp.Body.Close()
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return provideConfig, fmt.Errorf("Failed parse response to body: %s\n", string(bodyBytes))
+	}
+	json.Unmarshal(bodyBytes, &provideConfig)
+	return provideConfig, nil
 }
 
 func (d *defaultManager) Session() (*Session, error) {
