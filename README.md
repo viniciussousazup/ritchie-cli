@@ -191,5 +191,4 @@ Follow steps-by-step:https://github.com/ZupIT/ritchie-formulas
 * [@marcosgmgm](https://github.com/marcosgmgm) 
 * [@viniciusramosdefaria](https://github.com/viniciusramosdefaria) 
 * [@kaduartur](https://github.com/kaduartur) 
-* [@maykonmendeszup](https://github.com/maykonmendeszup) 
 * [@erneliojuniorzup](https://github.com/erneliojuniorzup)
