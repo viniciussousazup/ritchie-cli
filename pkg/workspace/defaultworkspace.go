@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/ZupIT/ritchie-cli/pkg/credential"
-	"github.com/ZupIT/ritchie-cli/pkg/file/fileutil"
+	"github.com/ZupIT/ritchie-cli/pkg/file"
 	"github.com/ZupIT/ritchie-cli/pkg/formula"
 	"github.com/ZupIT/ritchie-cli/pkg/git"
 	"github.com/ZupIT/ritchie-cli/pkg/login"
@@ -32,8 +32,8 @@ type formulaConfig struct {
 	URL      string `json:"formula_url"`
 }
 
-// DefaultManager is a default implementation of Manager interface
-type DefaultManager struct {
+// defaultManager is a default implementation of Manager interface
+type defaultManager struct {
 	ritchieHome    string
 	serverURL      string
 	httpClient     *http.Client
@@ -52,8 +52,8 @@ func NewDefaultManager(
 	g git.RepoManager,
 	cr credential.Manager,
 	l login.Manager,
-) *DefaultManager {
-	return &DefaultManager{
+) *defaultManager {
+	return &defaultManager{
 		ritchieHome:    ritchieHome,
 		serverURL:      serverUrl,
 		httpClient:     c,
@@ -65,8 +65,8 @@ func NewDefaultManager(
 }
 
 // CheckWorkingDir default implementation of function Manager.CheckWorkingDir
-func (d *DefaultManager) CheckWorkingDir() error {
-	err := fileutil.CreateIfNotExists(d.ritchieHome, 0755)
+func (d *defaultManager) CheckWorkingDir() error {
+	err := file.CreateIfNotExists(d.ritchieHome, 0755)
 	if err != nil {
 		return err
 	}
@@ -74,7 +74,7 @@ func (d *DefaultManager) CheckWorkingDir() error {
 }
 
 // InitWorkingDir default implementation of function Manager.InitWorkingDir
-func (d *DefaultManager) InitWorkingDir() error {
+func (d *defaultManager) InitWorkingDir() error {
 	log.Println("Loading user session...")
 	session, err := d.loginManager.Session()
 	if err != nil {
@@ -109,25 +109,22 @@ func (d *DefaultManager) InitWorkingDir() error {
 	switch resp.StatusCode {
 	case 200:
 		frm := &formulaConfig{}
-		json.NewDecoder(resp.Body).Decode(frm)
+		err := json.NewDecoder(resp.Body).Decode(frm)
+		if err != nil {
+			return err
+		}
 
 		switch frm.Provider {
 		case "github":
-			err := d.gitFormula(frm)
+			err := d.gitFormulaProcess(frm)
 			if err != nil {
 				return err
 			}
 		case "s3":
-			destPath := fmt.Sprintf(d.ritchieHome+"%s", formula.DirFormula)
-			zipFile, err := downloadZipProject(frm.URL, destPath)
+			err := d.s3Process(frm)
 			if err != nil {
 				return err
 			}
-			err = unzipFile(zipFile, d.ritchieHome)
-			if err != nil {
-				return err
-			}
-
 		}
 
 	default:
@@ -144,7 +141,7 @@ func (d *DefaultManager) InitWorkingDir() error {
 	return nil
 }
 
-func (d *DefaultManager) gitFormula(frm *formulaConfig) error {
+func (d *defaultManager) gitFormulaProcess(frm *formulaConfig) error {
 	secret, err := d.credManager.Get(frm.Provider)
 	if err != nil {
 		return err
@@ -160,7 +157,7 @@ func (d *DefaultManager) gitFormula(frm *formulaConfig) error {
 		URL: frm.URL,
 	}
 
-	if fileutil.Exists(path) {
+	if file.Exists(path) {
 		log.Println("Pull formulas...")
 		err = d.gitRepoManager.Pull(path, opt)
 		if err != nil && err.Error() != errAlreadyUpToDate.Error() {
@@ -172,6 +169,19 @@ func (d *DefaultManager) gitFormula(frm *formulaConfig) error {
 		if err != nil {
 			return nil
 		}
+	}
+	return nil
+}
+
+func (d *defaultManager) s3Process(frm *formulaConfig) error {
+	destPath := fmt.Sprintf(d.ritchieHome+"%s", formula.DirFormula)
+	zipFile, err := downloadZipProject(frm.URL, destPath)
+	if err != nil {
+		return err
+	}
+	err = unzipFile(zipFile, d.ritchieHome)
+	if err != nil {
+		return nil
 	}
 	return nil
 }
@@ -205,12 +215,12 @@ func downloadZipProject(url, destPath string) (string, error) {
 func unzipFile(filename, destPath string) error {
 	log.Println("Unzip files S3...")
 
-	_ = fileutil.CreateIfNotExists(destPath, 0655)
-	err := fileutil.Unzip(filename, destPath)
+	_ = file.CreateIfNotExists(destPath, 0655)
+	err := file.Unzip(filename, destPath)
 	if err != nil {
 		return err
 	}
-	err = fileutil.RemoveFile(filename)
+	err = file.RemoveFile(filename)
 	if err != nil {
 		return err
 	}

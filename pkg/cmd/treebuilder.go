@@ -3,14 +3,13 @@ package cmd
 import (
 	"fmt"
 	"github.com/ZupIT/ritchie-cli/pkg/autocomplete"
-	"log"
-
+	"github.com/ZupIT/ritchie-cli/pkg/slice/sliceutil"
 	"github.com/spf13/cobra"
+	"log"
 
 	"github.com/ZupIT/ritchie-cli/pkg/credential"
 	"github.com/ZupIT/ritchie-cli/pkg/formula"
 	"github.com/ZupIT/ritchie-cli/pkg/login"
-	"github.com/ZupIT/ritchie-cli/pkg/slice/sliceutil"
 	"github.com/ZupIT/ritchie-cli/pkg/tree"
 	"github.com/ZupIT/ritchie-cli/pkg/user"
 	"github.com/ZupIT/ritchie-cli/pkg/workspace"
@@ -24,8 +23,8 @@ var (
 		"root_completion_zsh", "root_completion_bash"}
 )
 
-// TreeBuilder type that represents the tree builder
-type TreeBuilder struct {
+// treeBuilder type that represents the tree builder
+type treeBuilder struct {
 	treeManager         tree.Manager
 	workspaceManager    workspace.Manager
 	credManager         credential.Manager
@@ -44,8 +43,8 @@ func NewTreeBuilder(
 	l login.Manager,
 	u user.Manager,
 	a autocomplete.Manager,
-) *TreeBuilder {
-	return &TreeBuilder{
+) *treeBuilder {
+	return &treeBuilder{
 		treeManager:         t,
 		workspaceManager:    w,
 		credManager:         c,
@@ -57,7 +56,7 @@ func NewTreeBuilder(
 }
 
 // BuildTree builds the tree of the commands
-func (b *TreeBuilder) BuildTree() (*cobra.Command, error) {
+func (b *treeBuilder) BuildTree() (*cobra.Command, error) {
 	rootCmd := NewRootCmd(b.workspaceManager)
 	initCmd := NewInitCmd(b.workspaceManager)
 	setCmd := NewSetCmd()
@@ -76,60 +75,64 @@ func (b *TreeBuilder) BuildTree() (*cobra.Command, error) {
 	deleteCmd.AddCommand(deleteUserCmd)
 	rootCmd.AddCommand(initCmd, setCmd, createCmd, deleteCmd, loginCmd, autocompleteCmd)
 
-	treecmd, err := b.treeManager.GetLocalTree()
+	treeCmd, err := b.treeManager.GetLocalTree()
 	if err != nil {
 		return nil, err
-	} else if treecmd != nil {
-		cmdmap := make(map[string]*cobra.Command)
-		cmdmap["root"] = rootCmd
-
-		for _, v := range treecmd.Commands {
-			cmdKey := fmt.Sprintf("%s_%s", v.Parent, v.Usage)
-			if !sliceutil.Contains(coreCmds, cmdKey) {
-				var annotations map[string]string
-
-				var cmd *cobra.Command
-				if v.Formula.Path != "" {
-					f := v.Formula
-					annotations = make(map[string]string)
-					annotations["formulaPath"] = f.Path
-					annotations["formulaBin"] = f.Bin
-					cmd = &cobra.Command{
-						Use:   v.Usage,
-						Short: v.Help,
-						Long:  v.Help,
-						RunE: func(cmd *cobra.Command, args []string) error {
-							log.Printf("Running cmd %v with args %v", cmd.Use, args)
-							if cmd.Annotations != nil {
-								fPath := cmd.Annotations["formulaPath"]
-								fBin := cmd.Annotations["formulaBin"]
-								frm := formula.Definition{
-									Path: fPath,
-									Bin:  fBin,
-								}
-								b.formulaManager.Run(frm)
-							}
-							return nil
-						},
-					}
-				} else {
-					cmd = &cobra.Command{
-						Use:   v.Usage + " SUBCOMMAND",
-						Short: v.Help,
-						Long:  v.Help,
-					}
-				}
-
-				if annotations != nil {
-					cmd.Annotations = annotations
-				}
-
-				parentCmd := cmdmap[v.Parent]
-				parentCmd.AddCommand(cmd)
-				cmdmap[cmdKey] = cmd
-			}
-		}
+	} else if treeCmd != nil {
+		b.processTree(treeCmd, rootCmd)
 	}
 
 	return rootCmd, nil
+}
+
+func (b *treeBuilder) processTree(treeCmd *tree.Representation, rootCmd *cobra.Command) {
+	commands := make(map[string]*cobra.Command)
+	commands["root"] = rootCmd
+
+	for _, v := range treeCmd.Commands {
+		cmdKey := fmt.Sprintf("%s_%s", v.Parent, v.Usage)
+		if !sliceutil.Contains(coreCmds, cmdKey) {
+			var annotations map[string]string
+
+			var cmd *cobra.Command
+			if v.Formula.Path != "" {
+				f := v.Formula
+				annotations = make(map[string]string)
+				annotations["formulaPath"] = f.Path
+				annotations["formulaBin"] = f.Bin
+				cmd = &cobra.Command{
+					Use:   v.Usage,
+					Short: v.Help,
+					Long:  v.Help,
+					RunE: func(cmd *cobra.Command, args []string) error {
+						log.Printf("Running cmd %v with args %v", cmd.Use, args)
+						if cmd.Annotations != nil {
+							fPath := cmd.Annotations["formulaPath"]
+							fBin := cmd.Annotations["formulaBin"]
+							frm := formula.Definition{
+								Path: fPath,
+								Bin:  fBin,
+							}
+							b.formulaManager.Run(frm)
+						}
+						return nil
+					},
+				}
+			} else {
+				cmd = &cobra.Command{
+					Use:   v.Usage + " SUBCOMMAND",
+					Short: v.Help,
+					Long:  v.Help,
+				}
+			}
+
+			if annotations != nil {
+				cmd.Annotations = annotations
+			}
+
+			parentCmd := commands[v.Parent]
+			parentCmd.AddCommand(cmd)
+			commands[cmdKey] = cmd
+		}
+	}
 }

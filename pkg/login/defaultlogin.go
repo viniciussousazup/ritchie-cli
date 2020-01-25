@@ -5,12 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/ZupIT/ritchie-cli/pkg/crypto"
+	"github.com/ZupIT/ritchie-cli/pkg/file"
 	"github.com/denisbrodbeck/machineid"
 	"net/http"
 	"os"
-
-	"github.com/ZupIT/ritchie-cli/pkg/crypto/cryptoutil"
-	"github.com/ZupIT/ritchie-cli/pkg/file/fileutil"
 )
 
 const (
@@ -56,29 +55,7 @@ func (d *defaultManager) Authenticate(cred *Credential) error {
 
 	switch resp.StatusCode {
 	case 200:
-		session := &Session{}
-		json.NewDecoder(resp.Body).Decode(session)
-		session.Username = cred.Username
-		session.Organization = cred.Organization
-		b, err := json.Marshal(session)
-		if err != nil {
-			return err
-		}
-		id, err := machineid.ID()
-		if err != nil {
-			return err
-		}
-		cipher := cryptoutil.Encrypt(passphrase, id, string(b))
-		sessFilePath := fmt.Sprintf(sessionFilePattern, d.homePath)
-		err = fileutil.WriteFile(sessFilePath, []byte(cipher))
-		if err != nil {
-			return err
-		}
-		err = os.Chmod(sessFilePath, 0600)
-		if err != nil {
-			return err
-		}
-		return nil
+		return d.handler200(resp, cred)
 	case 401:
 		return ErrBadCredential
 	case 503:
@@ -88,12 +65,46 @@ func (d *defaultManager) Authenticate(cred *Credential) error {
 	}
 }
 
+func (d *defaultManager) handler200(resp *http.Response, cred *Credential) error {
+	s := &Session{}
+	err := json.NewDecoder(resp.Body).Decode(s)
+	if err != nil {
+		return err
+	}
+
+	s.Username = cred.Username
+	s.Organization = cred.Organization
+	b, err := json.Marshal(s)
+	if err != nil {
+		return err
+	}
+
+	id, err := machineid.ID()
+	if err != nil {
+		return err
+	}
+
+	cipher := crypto.Encrypt(passphrase, id, string(b))
+	sessFilePath := fmt.Sprintf(sessionFilePattern, d.homePath)
+
+	err = file.WriteFile(sessFilePath, []byte(cipher))
+	if err != nil {
+		return err
+	}
+
+	err = os.Chmod(sessFilePath, 0600)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (d *defaultManager) Session() (*Session, error) {
 	sessFilePath := fmt.Sprintf(sessionFilePattern, d.homePath)
-	if !fileutil.Exists(sessFilePath) {
+	if !file.Exists(sessFilePath) {
 		return nil, errors.New("Please, you need to login first")
 	}
-	b, err := fileutil.ReadFile(sessFilePath)
+	b, err := file.ReadFile(sessFilePath)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +112,7 @@ func (d *defaultManager) Session() (*Session, error) {
 	if err != nil {
 		return nil, err
 	}
-	plain := cryptoutil.Decrypt(passphrase, id, string(b))
+	plain := crypto.Decrypt(passphrase, id, string(b))
 	session := &Session{}
 	if err := json.Unmarshal([]byte(plain), session); err != nil {
 		return nil, err

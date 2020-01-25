@@ -3,10 +3,9 @@ package validator
 import (
 	"errors"
 	"fmt"
+	"github.com/ZupIT/ritchie-cli/pkg/file"
 	"net/url"
 	"regexp"
-
-	"github.com/ZupIT/ritchie-cli/pkg/file/fileutil"
 )
 
 //IsValidName validates a name of something
@@ -27,7 +26,7 @@ func IsValidName(args []string) error {
 
 //IsValidLocation validates if location exists
 func IsValidLocation(location string) error {
-	if !fileutil.Exists(location) {
+	if !file.Exists(location) {
 		return fmt.Errorf("%s is not a valid location", location)
 	}
 	return nil

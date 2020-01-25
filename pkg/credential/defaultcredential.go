@@ -153,15 +153,26 @@ func (d *defaultManager) Configs() (Configs, error) {
 
 	switch resp.StatusCode {
 	case 200:
-		var cfg Configs
-		_ = json.NewDecoder(resp.Body).Decode(&cfg)
-		return cfg, nil
+		return handler200(resp)
 	default:
-		b, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return nil, err
-		}
-		log.Printf("Status code: %v", resp.StatusCode)
-		return nil, errors.New(string(b))
+		return handlerError(resp)
 	}
+}
+
+func handler200(resp *http.Response) (Configs, error) {
+	var cfg Configs
+	err := json.NewDecoder(resp.Body).Decode(&cfg)
+	if err != nil {
+		return nil, err
+	}
+	return cfg, nil
+}
+
+func handlerError(resp *http.Response) (Configs, error) {
+	b, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	log.Printf("Status code: %v", resp.StatusCode)
+	return nil, errors.New(string(b))
 }

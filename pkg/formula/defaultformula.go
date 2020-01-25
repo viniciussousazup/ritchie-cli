@@ -3,6 +3,7 @@ package formula
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/ZupIT/ritchie-cli/pkg/file"
 	"io/ioutil"
 	"log"
 	"os"
@@ -12,34 +13,33 @@ import (
 	"strings"
 
 	"github.com/ZupIT/ritchie-cli/pkg/env"
-	"github.com/ZupIT/ritchie-cli/pkg/file/fileutil"
 	"github.com/ZupIT/ritchie-cli/pkg/prompt"
 )
 
-// DefaultManager is a default implementation of Manager interface
-type DefaultManager struct {
+// defaultManager is a default implementation of Manager interface
+type defaultManager struct {
 	ritchieHome  string
 	envResolvers env.Resolvers
 }
 
 // NewDefaultManager creates a default instance of Manager interface
-func NewDefaultManager(ritchieHome string, ee env.Resolvers) *DefaultManager {
-	return &DefaultManager{ritchieHome: ritchieHome, envResolvers: ee}
+func NewDefaultManager(ritchieHome string, ee env.Resolvers) *defaultManager {
+	return &defaultManager{ritchieHome: ritchieHome, envResolvers: ee}
 }
 
 //Run default implementation of function Manager.Run
-func (d *DefaultManager) Run(def Definition) error {
+func (d *defaultManager) Run(def Definition) error {
 	formulaPath := def.FormulaPath(d.ritchieHome)
 
 	var config *Config
 	configFile := def.ConfigPath(formulaPath)
-	if fileutil.Exists(configFile) {
-		file, err := ioutil.ReadFile(configFile)
+	if file.Exists(configFile) {
+		configFile, err := ioutil.ReadFile(configFile)
 		if err != nil {
 			return err
 		}
 		config = &Config{}
-		err = json.Unmarshal([]byte(file), config)
+		err = json.Unmarshal(configFile, config)
 		if err != nil {
 			return err
 		}
@@ -108,7 +108,7 @@ func (d *DefaultManager) Run(def Definition) error {
 	return nil
 }
 
-func (d *DefaultManager) resolveIfReserved(input Input) (string, error) {
+func (d *defaultManager) resolveIfReserved(input Input) (string, error) {
 	s := strings.Split(input.Type, "_")
 	resolver := d.envResolvers[s[0]]
 	if resolver != nil {

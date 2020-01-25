@@ -49,7 +49,7 @@ func (o *loginCmd) prompt() error {
 
 	err = o.loginManager.Authenticate(c)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	log.Println("Login successful!")

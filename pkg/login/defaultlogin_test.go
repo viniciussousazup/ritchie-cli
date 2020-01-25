@@ -3,6 +3,7 @@ package login
 import (
 	"context"
 	"encoding/json"
+	"github.com/ZupIT/ritchie-cli/pkg/file"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -10,8 +11,6 @@ import (
 	"testing"
 
 	"github.com/matryer/is"
-
-	"github.com/ZupIT/ritchie-cli/pkg/file/fileutil"
 )
 
 const (
@@ -34,7 +33,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestAuthenticate(t *testing.T) {
-	fileutil.RemoveFile(homePath + "/.session")
+	file.RemoveFile(homePath + "/.session")
 
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cred := &Credential{}

@@ -11,14 +11,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// SetCredentialCmd type for set credential command
-type SetCredentialCmd struct {
+// setCredentialCmd type for set credential command
+type setCredentialCmd struct {
 	manager credential.Manager
 }
 
 // NewSetCredentialCmd creates a new cmd instance
 func NewSetCredentialCmd(m credential.Manager) *cobra.Command {
-	o := &SetCredentialCmd{m}
+	o := &setCredentialCmd{m}
 
 	return &cobra.Command{
 		Use:   "credential",
@@ -30,7 +30,7 @@ func NewSetCredentialCmd(m credential.Manager) *cobra.Command {
 	}
 }
 
-func (s *SetCredentialCmd) prompt() error {
+func (s *setCredentialCmd) prompt() error {
 	cfg, err := s.manager.Configs()
 	if err != nil {
 		return err
@@ -47,7 +47,7 @@ func (s *SetCredentialCmd) prompt() error {
 
 	username := "me"
 	if typ == credential.Admin {
-		username, err = prompt.String("Set credential for user [username] ", true)
+		username, err = prompt.String("Set credential for user [username]: ", true)
 		if err != nil {
 			return err
 		}
@@ -64,7 +64,7 @@ func (s *SetCredentialCmd) prompt() error {
 		var val string
 		var err error
 		fname := strings.ToLower(f.Field)
-		lab := fmt.Sprintf("%s: ", strings.Title(f.Field))
+		lab := fmt.Sprintf("%s %s: ", strings.Title(provider), f.Field)
 		if f.Type == prompt.PasswordType {
 			val, err = prompt.Password(lab)
 		} else {
@@ -87,6 +87,6 @@ func (s *SetCredentialCmd) prompt() error {
 		return err
 	}
 
-	log.Println("Credential saved!")
+	log.Println(fmt.Sprintf("%s credential saved!", strings.Title(provider)))
 	return nil
 }
