@@ -5,7 +5,6 @@ import (
 	"crypto/cipher"
 	"encoding/base64"
 	"fmt"
-	"strings"
 )
 
 var iv = []byte{35, 46, 57, 24, 85, 35, 24, 74, 87, 35, 88, 98, 66, 32, 14, 05}
@@ -23,12 +22,12 @@ func decodeBase64(s string) []byte {
 }
 
 // Encrypt encrypt data using aes
-func Encrypt(key, nonce, text string) string {
+func Encrypt(key, text string) string {
 	block, err := aes.NewCipher([]byte(key))
 	if err != nil {
 		panic(err)
 	}
-	plaintext := []byte(fmt.Sprint(nonce, text, nonce))
+	plaintext := []byte(fmt.Sprint(text))
 	cfb := cipher.NewCFBEncrypter(block, iv)
 	cipherText := make([]byte, len(plaintext))
 	cfb.XORKeyStream(cipherText, plaintext)
@@ -36,7 +35,7 @@ func Encrypt(key, nonce, text string) string {
 }
 
 // Decrypt decrypt data using aes
-func Decrypt(key, nonce, text string) string {
+func Decrypt(key, text string) string {
 	block, err := aes.NewCipher([]byte(key))
 	if err != nil {
 		panic(err)
@@ -45,5 +44,5 @@ func Decrypt(key, nonce, text string) string {
 	cfb := cipher.NewCFBDecrypter(block, iv)
 	plaintext := make([]byte, len(cipherText))
 	cfb.XORKeyStream(plaintext, cipherText)
-	return strings.ReplaceAll(string(plaintext), nonce, "")
+	return string(plaintext)
 }

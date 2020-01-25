@@ -25,8 +25,8 @@ const (
 )
 
 func main() {
-	if env.Dev == env.Environment{
-		log.Printf("Running Ritchie using development mode. Url: %v\n\n", env.ServerUrl)
+	if env.Prod != env.Environment {
+		log.Printf("Running Ritchie using %v mode. Url: %v\n\n", env.Environment, env.ServerUrl)
 	}
 
 	// get user home

@@ -28,30 +28,14 @@ func NewLoginCmd(loginManager login.Manager) *cobra.Command {
 }
 
 func (o *loginCmd) prompt() error {
-	org, err := prompt.String("Organization: ", true)
+	org, err := prompt.String("Login [Organization]: ", true)
 	if err != nil {
 		return err
 	}
-	u, err := prompt.String("Username: ", true)
-	if err != nil {
-		return nil
-	}
-	p, err := prompt.Password("Password: ")
-	if err != nil {
-		return nil
-	}
-
-	c := &login.Credential{
-		Username:     u,
-		Password:     p,
-		Organization: org,
-	}
-
-	err = o.loginManager.Authenticate(c)
+	log.Println("Starting login...")
+	err = o.loginManager.Authenticate(org)
 	if err != nil {
 		return err
 	}
-
-	log.Println("Login successful!")
 	return nil
 }

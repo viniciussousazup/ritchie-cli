@@ -31,6 +31,13 @@ build-dev:
 	#MAC
 	GOOS=darwin GOARCH=amd64 $(GOBUILD) -ldflags '-X $(MODULE)/pkg/cmd.Version=dev -X $(MODULE)/pkg/cmd.BuildDate=$(DATE) -X $(MODULE)/pkg/env.ServerUrl=https://ritchie-server-dev.itiaws.dev -X $(MODULE)/pkg/env.Environment=dev' -o ./$(DIST_MAC)/$(BINARY_NAME) -v $(CMD_PATH)
 
+build-qa:
+	mkdir -p $(DIST_MAC) $(DIST_LINUX)
+	#LINUX
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) -ldflags '-X $(MODULE)/pkg/cmd.Version=dev -X $(MODULE)/pkg/cmd.BuildDate=$(DATE) -X $(MODULE)/pkg/env.ServerUrl=https://ritchie-server.itiaws.dev -X $(MODULE)/pkg/env.Environment=qa' -o ./$(DIST_LINUX)/$(BINARY_NAME) -v $(CMD_PATH)
+	#MAC
+	GOOS=darwin GOARCH=amd64 $(GOBUILD) -ldflags '-X $(MODULE)/pkg/cmd.Version=dev -X $(MODULE)/pkg/cmd.BuildDate=$(DATE) -X $(MODULE)/pkg/env.ServerUrl=https://ritchie-server.itiaws.dev -X $(MODULE)/pkg/env.Environment=qa' -o ./$(DIST_MAC)/$(BINARY_NAME) -v $(CMD_PATH)
+
 test:
 	$(GOTEST) -short ./...
 
