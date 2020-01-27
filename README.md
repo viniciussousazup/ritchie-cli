@@ -11,7 +11,7 @@ For install Ritchie-CLI follow the step-by-step:
 Installing from the script:
 
 ```
-curl -fsSL -o install.sh http://ritchie-cli-bucket234376412767550.s3-website-sa-east-1.amazonaws.com/install.sh
+curl -fsSL -o install.sh http://ritchie-cli-bucket152849730126474.s3-website-sa-east-1.amazonaws.com/install.sh
 chmod +x install.sh
 ./install.sh linux bash (linux) ou ./install.sh linux zsh(mac)
 ```
