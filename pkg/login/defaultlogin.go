@@ -110,10 +110,29 @@ func (d *defaultManager) handler(provider *oidc.Provider, state, organization st
 			http.Error(w, "Failed to create session: "+err.Error(), http.StatusInternalServerError)
 			go stopServer()
 		}
-		w.Write([]byte(`<h1>Login ok, return to Rit CLI!</h1>`))
+		w.Write([]byte(getHtml()))
 		log.Printf("Login ok!")
 		go stopServer()
 	})
+}
+
+func getHtml() string {
+	return `<html>
+<head>
+</head>
+<body> 
+<p style="text-align:center">Login ok, return to Rit CLI!</br>This window will close automatically within <span id="counter">5</span> second(s).</p> <script type="text/javascript">
+ function countdown() {
+    var i = document.getElementById('counter');
+    i.innerHTML = parseInt(i.innerHTML)-1;
+ if (parseInt(i.innerHTML)<=0) {
+  window.close();
+ }
+}
+setInterval(function(){ countdown(); },1000);
+</script>
+</body>
+</html>`
 }
 
 func (d *defaultManager) createSession(token, username, organization string) error {
