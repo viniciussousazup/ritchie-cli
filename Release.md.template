@@ -3,10 +3,10 @@
 ### Binaries
 
 #### Linux
-[Download](http://ritchie-cli-bucket234376412767550.s3-website-sa-east-1.amazonaws.com/${RELEASE_VERSION}/linux/rit)
+[Download](http://ritchie-cli-bucket152849730126474.s3-website-sa-east-1.amazonaws.com/${RELEASE_VERSION}/linux/rit)
 
 #### Mac
-[Download](http://ritchie-cli-bucket234376412767550.s3-website-sa-east-1.amazonaws.com/${RELEASE_VERSION}/mac/rit)
+[Download](http://ritchie-cli-bucket152849730126474.s3-website-sa-east-1.amazonaws.com/${RELEASE_VERSION}/mac/rit)
 
 #### Windows
-[Download](http://ritchie-cli-bucket234376412767550.s3-website-sa-east-1.amazonaws.com/${RELEASE_VERSION}/windows/rit.exe)
+[Download](http://ritchie-cli-bucket152849730126474.s3-website-sa-east-1.amazonaws.com/${RELEASE_VERSION}/windows/rit.exe)
