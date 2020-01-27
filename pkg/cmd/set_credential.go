@@ -40,14 +40,14 @@ func (s *setCredentialCmd) prompt() error {
 		providers = append(providers, k)
 	}
 
-	typ, err := prompt.List("Type: ", []string{credential.Me, credential.Admin})
+	typ, err := prompt.List("Profile: ", []string{credential.Me, credential.Other})
 	if err != nil {
 		return err
 	}
 
 	username := "me"
-	if typ == credential.Admin {
-		username, err = prompt.String("Set credential for user [username]: ", true)
+	if typ == credential.Other {
+		username, err = prompt.String("Username: ", true)
 		if err != nil {
 			return err
 		}

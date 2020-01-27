@@ -3,7 +3,7 @@ package workspace
 import (
 	"context"
 	"fmt"
-	"github.com/ZupIT/ritchie-cli/pkg/file"
+	"github.com/ZupIT/ritchie-cli/pkg/file/fileutil"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -28,7 +28,7 @@ func TestMain(m *testing.M) {
 	home = fmt.Sprintf("%s/.rit", os.TempDir())
 	homeNotExists = fmt.Sprintf("%s/.notexists", os.TempDir())
 	serverURL = "https://ritchie-server.itiaws.dev"
-	_ = file.CreateIfNotExists(home, 0755)
+	_ = fileutil.CreateIfNotExists(home, 0755)
 	os.Exit(m.Run())
 }
 

@@ -3,7 +3,7 @@ package formula
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/ZupIT/ritchie-cli/pkg/file"
+	"github.com/ZupIT/ritchie-cli/pkg/file/fileutil"
 	"io/ioutil"
 	"log"
 	"os"
@@ -33,7 +33,7 @@ func (d *defaultManager) Run(def Definition) error {
 
 	var config *Config
 	configFile := def.ConfigPath(formulaPath)
-	if file.Exists(configFile) {
+	if fileutil.Exists(configFile) {
 		configFile, err := ioutil.ReadFile(configFile)
 		if err != nil {
 			return err

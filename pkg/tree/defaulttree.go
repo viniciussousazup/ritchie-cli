@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/ZupIT/ritchie-cli/pkg/file"
+	"github.com/ZupIT/ritchie-cli/pkg/file/fileutil"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -33,7 +33,7 @@ func NewDefaultManager(ritchieHome, serverURL string, c *http.Client, l login.Ma
 // GetLocalTree default implementation of function Manager.GetLocalTree
 func (d *defaultManager) GetLocalTree() (*Representation, error) {
 	treeCmdFile := fmt.Sprintf(treeCmdPattern, d.ritchieHome)
-	if !file.Exists(treeCmdFile) {
+	if !fileutil.Exists(treeCmdFile) {
 		return nil, nil
 	}
 	treeFile, err := ioutil.ReadFile(treeCmdFile)

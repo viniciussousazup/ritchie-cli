@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/ZupIT/ritchie-cli/pkg/credential"
-	"github.com/ZupIT/ritchie-cli/pkg/file"
+	"github.com/ZupIT/ritchie-cli/pkg/file/fileutil"
 	"github.com/ZupIT/ritchie-cli/pkg/formula"
 	"github.com/ZupIT/ritchie-cli/pkg/git"
 	"github.com/ZupIT/ritchie-cli/pkg/login"
@@ -66,7 +66,7 @@ func NewDefaultManager(
 
 // CheckWorkingDir default implementation of function Manager.CheckWorkingDir
 func (d *defaultManager) CheckWorkingDir() error {
-	err := file.CreateIfNotExists(d.ritchieHome, 0755)
+	err := fileutil.CreateIfNotExists(d.ritchieHome, 0755)
 	if err != nil {
 		return err
 	}
@@ -157,7 +157,7 @@ func (d *defaultManager) gitFormulaProcess(frm *formulaConfig) error {
 		URL: frm.URL,
 	}
 
-	if file.Exists(path) {
+	if fileutil.Exists(path) {
 		log.Println("Pull formulas...")
 		err = d.gitRepoManager.Pull(path, opt)
 		if err != nil && err.Error() != errAlreadyUpToDate.Error() {
@@ -215,12 +215,12 @@ func downloadZipProject(url, destPath string) (string, error) {
 func unzipFile(filename, destPath string) error {
 	log.Println("Unzip files S3...")
 
-	_ = file.CreateIfNotExists(destPath, 0655)
-	err := file.Unzip(filename, destPath)
+	_ = fileutil.CreateIfNotExists(destPath, 0655)
+	err := fileutil.Unzip(filename, destPath)
 	if err != nil {
 		return err
 	}
-	err = file.RemoveFile(filename)
+	err = fileutil.RemoveFile(filename)
 	if err != nil {
 		return err
 	}

@@ -6,9 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/ZupIT/ritchie-cli/pkg/crypto"
+	"github.com/ZupIT/ritchie-cli/pkg/crypto/cryptoutil"
 	"github.com/ZupIT/ritchie-cli/pkg/env"
-	"github.com/ZupIT/ritchie-cli/pkg/file"
+	"github.com/ZupIT/ritchie-cli/pkg/file/fileutil"
 	"github.com/coreos/go-oidc"
 	"github.com/denisbrodbeck/machineid"
 	"golang.org/x/oauth2"
@@ -134,9 +134,9 @@ func (d *defaultManager) createSession(token, username, organization string) err
 	h := md5.New()
 	io.WriteString(h, passphrase)
 	io.WriteString(h, id)
-	cipher := crypto.Encrypt(string(h.Sum(nil)), string(b))
+	cipher := cryptoutil.Encrypt(string(h.Sum(nil)), string(b))
 	sessFilePath := fmt.Sprintf(sessionFilePattern, d.homePath)
-	err = file.WriteFile(sessFilePath, []byte(cipher))
+	err = fileutil.WriteFile(sessFilePath, []byte(cipher))
 	if err != nil {
 		return err
 	}
@@ -193,10 +193,10 @@ func providerConfig(organization string) (ProviderConfig, error) {
 
 func (d *defaultManager) Session() (*Session, error) {
 	sessFilePath := fmt.Sprintf(sessionFilePattern, d.homePath)
-	if !file.Exists(sessFilePath) {
+	if !fileutil.Exists(sessFilePath) {
 		return nil, errors.New("Please, you need to login first")
 	}
-	b, err := file.ReadFile(sessFilePath)
+	b, err := fileutil.ReadFile(sessFilePath)
 	if err != nil {
 		return nil, err
 	}
@@ -207,7 +207,7 @@ func (d *defaultManager) Session() (*Session, error) {
 	h := md5.New()
 	io.WriteString(h, passphrase)
 	io.WriteString(h, id)
-	plain := crypto.Decrypt(string(h.Sum(nil)), string(b))
+	plain := cryptoutil.Decrypt(string(h.Sum(nil)), string(b))
 	session := &Session{}
 	if err := json.Unmarshal([]byte(plain), session); err != nil {
 		return nil, err

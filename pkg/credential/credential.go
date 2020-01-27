@@ -3,8 +3,8 @@ package credential
 const (
 	// Me credential
 	Me = "me"
-	// Admin credential
-	Admin = "admin"
+	// Other credential
+	Other = "other"
 )
 
 // Secret type that represents a credential secret
