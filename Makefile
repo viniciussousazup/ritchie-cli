@@ -54,9 +54,9 @@ release:
 	git tag -a $(RELEASE_VERSION) -m "release"
 	git push $(GIT_REMOTE) $(RELEASE_VERSION)
 	curl --user $(GIT_USERNAME):$(GIT_PASSWORD) -X POST https://api.github.com/repos/ZupIT/ritchie-cli/pulls -H 'Content-Type: application/json' -d '{ "title": "Release $(RELEASE_VERSION) merge", "body": "Release $(RELEASE_VERSION) merge with master", "head": "release-$(RELEASE_VERSION)", "base": "master" }'
-	aws s3 sync dist s3://ritchie-cli-bucket234376412767550/$(RELEASE_VERSION) --include "*"
+	aws s3 sync dist s3://ritchie-cli-bucket152849730126474/$(RELEASE_VERSION) --include "*"
 	echo "$(RELEASE_VERSION)" > stable.txt
-	aws s3 sync . s3://ritchie-cli-bucket234376412767550/ --exclude "*" --include "stable.txt"
+	aws s3 sync . s3://ritchie-cli-bucket152849730126474/ --exclude "*" --include "stable.txt"
 
 publish:
 	echo "Do nothing"
