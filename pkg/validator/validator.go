@@ -3,10 +3,9 @@ package validator
 import (
 	"errors"
 	"fmt"
+	"github.com/ZupIT/ritchie-cli/pkg/file/fileutil"
 	"net/url"
 	"regexp"
-
-	"github.com/ZupIT/ritchie-cli/pkg/file/fileutil"
 )
 
 //IsValidName validates a name of something

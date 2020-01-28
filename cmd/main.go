@@ -37,28 +37,28 @@ func main() {
 	ritchieHomePath := fmt.Sprintf(ritchieHomePattern, usr.HomeDir)
 
 	//deps
-	gitRepoManager := git.NewRepoManager()
-	loginManager := login.NewDefaultManager(ritchieHomePath, env.ServerUrl, &http.Client{})
-	treeManager := tree.NewDefaultManager(ritchieHomePath, env.ServerUrl, &http.Client{}, loginManager)
-	credManager := credential.NewDefaultManager(env.ServerUrl, &http.Client{}, loginManager)
-	userManager := ruser.NewDefaultManager(env.ServerUrl, &http.Client{}, loginManager)
-	workspaceManager := workspace.NewDefaultManager(ritchieHomePath, env.ServerUrl, &http.Client{}, treeManager, gitRepoManager, credManager, loginManager)
-	autocomplete := autocomplete.NewDefaultManager(env.ServerUrl, http.DefaultClient, loginManager)
+	gitManager := git.NewDefaultManager()
+	loginManager := login.NewDefaultManager(ritchieHomePath, env.ServerUrl, http.DefaultClient)
+	treeManager := tree.NewDefaultManager(ritchieHomePath, env.ServerUrl, http.DefaultClient, loginManager)
+	credManager := credential.NewDefaultManager(env.ServerUrl, http.DefaultClient, loginManager)
+	userManager := ruser.NewDefaultManager(env.ServerUrl, http.DefaultClient, loginManager)
+	workspaceManager := workspace.NewDefaultManager(ritchieHomePath, env.ServerUrl, http.DefaultClient, treeManager, gitManager, credManager, loginManager)
+	autocompleteManager := autocomplete.NewDefaultManager(env.ServerUrl, http.DefaultClient, loginManager)
 
 	credResolver := envcredential.NewResolver(credManager)
-	envResolvers := make(map[string]env.Resolver)
+	envResolvers := make(env.Resolvers)
 	envResolvers[env.Credential] = credResolver
 	formulaManager := formula.NewDefaultManager(ritchieHomePath, envResolvers)
 
 	//cmd tree
-	treeBuilder := cmd.NewTreeBuilder(treeManager, workspaceManager, credManager, formulaManager, loginManager, userManager, autocomplete)
+	treeBuilder := cmd.NewTreeBuilder(treeManager, workspaceManager, credManager, formulaManager, loginManager, userManager, autocompleteManager)
 	rootCmd, err := treeBuilder.BuildTree()
 	if err != nil {
 		panic(err)
 	}
 
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %+v\n", err)
+		_, _ = fmt.Fprintf(os.Stderr, "Error: %+v\n", err)
 		os.Exit(1)
 	}
 }

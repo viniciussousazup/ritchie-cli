@@ -9,7 +9,7 @@ import (
 	"github.com/ZupIT/ritchie-cli/pkg/crypto/cryptoutil"
 	"github.com/ZupIT/ritchie-cli/pkg/env"
 	"github.com/ZupIT/ritchie-cli/pkg/file/fileutil"
-	oidc "github.com/coreos/go-oidc"
+	"github.com/coreos/go-oidc"
 	"github.com/denisbrodbeck/machineid"
 	"golang.org/x/oauth2"
 	"io"
@@ -44,7 +44,7 @@ func NewDefaultManager(homePath, serverURL string, httpClient *http.Client) *def
 }
 
 func (d *defaultManager) Authenticate(organization string) error {
-	providerConfig, err := getProviderConfig(organization)
+	providerConfig, err := providerConfig(organization)
 	if err != nil {
 		return err
 	}
@@ -74,7 +74,7 @@ func (d *defaultManager) Authenticate(organization string) error {
 }
 
 func (d *defaultManager) handler(provider *oidc.Provider, state, organization string, oauth2Config oauth2.Config, ctx context.Context) http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 		oidcConfig := &oidc.Config{
 			ClientID: oauth2Config.ClientID,
 		}
@@ -101,7 +101,7 @@ func (d *defaultManager) handler(provider *oidc.Provider, state, organization st
 		}
 		token := oauth2Token.AccessToken
 		user := struct {
-			Email string `json:"email"`
+			Email    string `json:"email"`
 			Username string `json:"preferred_username"`
 		}{}
 		idToken.Claims(&user)
@@ -110,36 +110,37 @@ func (d *defaultManager) handler(provider *oidc.Provider, state, organization st
 			http.Error(w, "Failed to create session: "+err.Error(), http.StatusInternalServerError)
 			go stopServer()
 		}
-		w.Write([]byte(getHtml()))
+		w.Write([]byte(loginSuccessful()))
 		log.Printf("Login ok!")
 		go stopServer()
-	})
+	}
 }
 
-func getHtml() string {
+func loginSuccessful() string {
 	return `<html>
-<head>
-</head>
-<body> 
-<p style="text-align:center">Login ok, return to Rit CLI!</br>This window will close automatically within <span id="counter">5</span> second(s).</p> <script type="text/javascript">
- function countdown() {
-    var i = document.getElementById('counter');
-    i.innerHTML = parseInt(i.innerHTML)-1;
- if (parseInt(i.innerHTML)<=0) {
-  window.close();
- }
-}
-setInterval(function(){ countdown(); },1000);
-</script>
-</body>
-</html>`
+				<head>
+				</head>
+				<body> 
+					<p style="text-align:center">Login successful, return to Rit CLI!</br>This window will close automatically within <span id="counter">5</span> second(s).</p> 
+					<script type="text/javascript">
+						function countdown() {
+							var i = document.getElementById('counter');
+							i.innerHTML = parseInt(i.innerHTML)-1;
+					 		if (parseInt(i.innerHTML)<=0) {
+					  			window.close();
+					 		}
+						}
+						setInterval(function(){ countdown(); },1000);
+					</script>
+				</body>
+			</html>`
 }
 
 func (d *defaultManager) createSession(token, username, organization string) error {
 	session := &Session{
-		AccessToken:  	token,
-		Organization: 	organization,
-		Username:    	username,
+		AccessToken:  token,
+		Organization: organization,
+		Username:     username,
 	}
 
 	b, err := json.Marshal(session)
@@ -186,12 +187,12 @@ func openBrowser(url string) error {
 	return err
 }
 
-func getProviderConfig(organization string) (ProviderConfig, error) {
+func providerConfig(organization string) (ProviderConfig, error) {
 	var provideConfig ProviderConfig
 	url := fmt.Sprintf(providerUrl, env.ServerUrl)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-		return provideConfig, fmt.Errorf("Failed to getProviderConfig for org %s. \n%v", organization, err)
+		return provideConfig, fmt.Errorf("Failed to providerConfig for org %s. \n%v", organization, err)
 	}
 	req.Header.Set("x-org", organization)
 	resp, err := http.DefaultClient.Do(req)

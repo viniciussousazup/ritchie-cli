@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/ZupIT/ritchie-cli/pkg/file/fileutil"
 	"io/ioutil"
 	"log"
 	"net/http"
 
-	"github.com/ZupIT/ritchie-cli/pkg/file/fileutil"
 	"github.com/ZupIT/ritchie-cli/pkg/login"
 )
 
@@ -17,8 +17,8 @@ const (
 	urlGetPattern  = "%s/tree"
 )
 
-// DefaultManager is a default implementation of Manager interface
-type DefaultManager struct {
+// defaultManager is a default implementation of Manager interface
+type defaultManager struct {
 	ritchieHome  string
 	serverURL    string
 	httpClient   *http.Client
@@ -26,32 +26,32 @@ type DefaultManager struct {
 }
 
 // NewDefaultManager creates a default instance of Manager interface
-func NewDefaultManager(ritchieHome, serverURL string, httpClient *http.Client, loginManager login.Manager) *DefaultManager {
-	return &DefaultManager{ritchieHome, serverURL, httpClient, loginManager}
+func NewDefaultManager(ritchieHome, serverURL string, c *http.Client, l login.Manager) *defaultManager {
+	return &defaultManager{ritchieHome: ritchieHome, serverURL: serverURL, httpClient: c, loginManager: l}
 }
 
 // GetLocalTree default implementation of function Manager.GetLocalTree
-func (d *DefaultManager) GetLocalTree() (*Representation, error) {
+func (d *defaultManager) GetLocalTree() (*Representation, error) {
 	treeCmdFile := fmt.Sprintf(treeCmdPattern, d.ritchieHome)
 	if !fileutil.Exists(treeCmdFile) {
 		return nil, nil
 	}
-	file, err := ioutil.ReadFile(treeCmdFile)
+	treeFile, err := ioutil.ReadFile(treeCmdFile)
 	if err != nil {
 		return nil, err
 	}
 
-	treecmd := &Representation{}
-	err = json.Unmarshal([]byte(file), treecmd)
+	treeCmd := &Representation{}
+	err = json.Unmarshal(treeFile, treeCmd)
 	if err != nil {
 		return nil, err
 	}
 
-	return treecmd, nil
+	return treeCmd, nil
 }
 
 // LoadAndSaveTree default implementation of function Manager.SaveTree
-func (d *DefaultManager) LoadAndSaveTree() error {
+func (d *defaultManager) LoadAndSaveTree() error {
 	session, err := d.loginManager.Session()
 	if err != nil {
 		return err

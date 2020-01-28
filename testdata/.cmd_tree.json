@@ -16,11 +16,6 @@
         "parent": "root"
       },
       {
-        "usage": "version",
-        "help": "Print version",
-        "parent": "root"
-      },
-      {
         "usage": "set",
         "help": "Set objects",
         "parent": "root"

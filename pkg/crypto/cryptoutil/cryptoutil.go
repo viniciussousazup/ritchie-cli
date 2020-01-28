@@ -29,9 +29,9 @@ func Encrypt(key, text string) string {
 	}
 	plaintext := []byte(fmt.Sprint(text))
 	cfb := cipher.NewCFBEncrypter(block, iv)
-	ciphertext := make([]byte, len(plaintext))
-	cfb.XORKeyStream(ciphertext, plaintext)
-	return encodeBase64(ciphertext)
+	cipherText := make([]byte, len(plaintext))
+	cfb.XORKeyStream(cipherText, plaintext)
+	return encodeBase64(cipherText)
 }
 
 // Decrypt decrypt data using aes
@@ -40,9 +40,9 @@ func Decrypt(key, text string) string {
 	if err != nil {
 		panic(err)
 	}
-	ciphertext := decodeBase64(text)
+	cipherText := decodeBase64(text)
 	cfb := cipher.NewCFBDecrypter(block, iv)
-	plaintext := make([]byte, len(ciphertext))
-	cfb.XORKeyStream(plaintext, ciphertext)
+	plaintext := make([]byte, len(cipherText))
+	cfb.XORKeyStream(plaintext, cipherText)
 	return string(plaintext)
 }

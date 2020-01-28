@@ -22,8 +22,8 @@ type defaultManager struct {
 }
 
 // NewDefaultManager creates a default instance of Manager interface
-func NewDefaultManager(serverURL string, httpClient *http.Client, loginManager login.Manager) *defaultManager {
-	return &defaultManager{serverURL, httpClient, loginManager}
+func NewDefaultManager(serverUrl string, c *http.Client, l login.Manager) *defaultManager {
+	return &defaultManager{serverURL: serverUrl, httpClient: c, loginManager: l}
 }
 
 func (d *defaultManager) Create(user *Definition) error {

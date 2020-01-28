@@ -62,4 +62,4 @@ publish:
 	echo "Do nothing"
 
 clean:
-	rm -rf $(DIST_MAC) $(DIST_LINUX) $(DIST_WIN)
+	rm -rf $(DIST)

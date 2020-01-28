@@ -3,6 +3,7 @@ package workspace
 import (
 	"context"
 	"fmt"
+	"github.com/ZupIT/ritchie-cli/pkg/file/fileutil"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -12,7 +13,6 @@ import (
 	"github.com/matryer/is"
 
 	"github.com/ZupIT/ritchie-cli/pkg/credential"
-	"github.com/ZupIT/ritchie-cli/pkg/file/fileutil"
 	"github.com/ZupIT/ritchie-cli/pkg/git"
 	"github.com/ZupIT/ritchie-cli/pkg/login"
 	"github.com/ZupIT/ritchie-cli/pkg/tree"
@@ -28,7 +28,7 @@ func TestMain(m *testing.M) {
 	home = fmt.Sprintf("%s/.rit", os.TempDir())
 	homeNotExists = fmt.Sprintf("%s/.notexists", os.TempDir())
 	serverURL = "https://ritchie-server.itiaws.dev"
-	fileutil.CreateIfNotExists(home, 0755)
+	_ = fileutil.CreateIfNotExists(home, 0755)
 	os.Exit(m.Run())
 }
 
@@ -101,7 +101,7 @@ func newTestingManager(handler http.Handler) (Manager, func()) {
 				Provider:   "test",
 			}, nil
 		},
-		ConfigsFunc: func() (map[string][]credential.Config, error) {
+		ConfigsFunc: func() (credential.Configs, error) {
 			return nil, nil
 		},
 	}

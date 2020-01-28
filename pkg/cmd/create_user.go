@@ -33,37 +33,37 @@ func (o *createUserCmd) prompt(args []string) error {
 	if err != nil {
 		return err
 	}
-	fname, err := prompt.String("First name: ", true)
+	fn, err := prompt.String("First name: ", true)
 	if err != nil {
 		return err
 	}
-	lname, err := prompt.String("Last name: ", true)
+	ln, err := prompt.String("Last name: ", true)
 	if err != nil {
 		return err
 	}
-	email, err := prompt.Email("Email: ")
+	e, err := prompt.Email("Email: ")
 	if err != nil {
 		return err
 	}
-	username, err := prompt.String("Username: ", true)
+	un, err := prompt.String("Username: ", true)
 	if err != nil {
 		return err
 	}
-	pass, err := prompt.Password("Password: ")
+	p, err := prompt.Password("Password: ")
 	if err != nil {
 		return err
 	}
 
-	user := &user.Definition{
+	u := &user.Definition{
 		Organization: org,
-		FirstName:    fname,
-		LastName:     lname,
-		Email:        email,
-		Username:     username,
-		Password:     pass,
+		FirstName:    fn,
+		LastName:     ln,
+		Email:        e,
+		Username:     un,
+		Password:     p,
 	}
 
-	err = o.userManager.Create(user)
+	err = o.userManager.Create(u)
 	if err != nil {
 		return err
 	}

@@ -11,26 +11,26 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// SetCredentialCmd type for set credential command
-type SetCredentialCmd struct {
+// setCredentialCmd type for set credential command
+type setCredentialCmd struct {
 	manager credential.Manager
 }
 
 // NewSetCredentialCmd creates a new cmd instance
 func NewSetCredentialCmd(m credential.Manager) *cobra.Command {
-	o := &SetCredentialCmd{m}
+	o := &setCredentialCmd{m}
 
 	return &cobra.Command{
 		Use:   "credential",
 		Short: "Set provider credential",
 		Long:  `Set credentials for Github, Gitlab, AWS, etc.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return o.prompt(args)
+			return o.prompt()
 		},
 	}
 }
 
-func (s *SetCredentialCmd) prompt(args []string) error {
+func (s *setCredentialCmd) prompt() error {
 	cfg, err := s.manager.Configs()
 	if err != nil {
 		return err
@@ -40,20 +40,20 @@ func (s *SetCredentialCmd) prompt(args []string) error {
 		providers = append(providers, k)
 	}
 
-	typ, err := prompt.List("Credential [Type]: ", []string{credential.Me, credential.Admin})
+	typ, err := prompt.List("Profile: ", []string{credential.Me, credential.Other})
 	if err != nil {
 		return err
 	}
 
 	username := "me"
-	if typ == credential.Admin {
-		username, err = prompt.String("Credential [Username of the Organization]: ", true)
+	if typ == credential.Other {
+		username, err = prompt.String("Username: ", true)
 		if err != nil {
 			return err
 		}
 	}
 
-	provider, err := prompt.List("Credential [Provider]: ", providers)
+	provider, err := prompt.List("Provider: ", providers)
 	if err != nil {
 		return err
 	}
@@ -64,7 +64,7 @@ func (s *SetCredentialCmd) prompt(args []string) error {
 		var val string
 		var err error
 		fname := strings.ToLower(f.Field)
-		lab := fmt.Sprintf("Credential [%s]: ", f.Field)
+		lab := fmt.Sprintf("%s %s: ", strings.Title(provider), f.Field)
 		if f.Type == prompt.PasswordType {
 			val, err = prompt.Password(lab)
 		} else {
@@ -87,6 +87,6 @@ func (s *SetCredentialCmd) prompt(args []string) error {
 		return err
 	}
 
-	log.Println("Credential saved!")
+	log.Println(fmt.Sprintf("%s credential saved!", strings.Title(provider)))
 	return nil
 }

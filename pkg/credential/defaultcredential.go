@@ -31,8 +31,8 @@ type defaultManager struct {
 }
 
 // NewDefaultManager creates a default instance of Manager interface
-func NewDefaultManager(serverURL string, httpClient *http.Client, loginManager login.Manager) *defaultManager {
-	return &defaultManager{serverURL, httpClient, loginManager}
+func NewDefaultManager(serverURL string, c *http.Client, l login.Manager) *defaultManager {
+	return &defaultManager{serverURL: serverURL, httpClient: c, loginManager: l}
 }
 
 func (d *defaultManager) Save(secret *Secret) error {
@@ -130,7 +130,7 @@ func (d *defaultManager) Get(provider string) (*Secret, error) {
 	}
 }
 
-func (d *defaultManager) Configs() (map[string][]Config, error) {
+func (d *defaultManager) Configs() (Configs, error) {
 	session, err := d.loginManager.Session()
 	if err != nil {
 		return nil, err
@@ -153,15 +153,26 @@ func (d *defaultManager) Configs() (map[string][]Config, error) {
 
 	switch resp.StatusCode {
 	case 200:
-		var cfg map[string][]Config
-		json.NewDecoder(resp.Body).Decode(&cfg)
-		return cfg, nil
+		return handler200(resp)
 	default:
-		b, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return nil, err
-		}
-		log.Printf("Status code: %v", resp.StatusCode)
-		return nil, errors.New(string(b))
+		return handlerError(resp)
 	}
+}
+
+func handler200(resp *http.Response) (Configs, error) {
+	var cfg Configs
+	err := json.NewDecoder(resp.Body).Decode(&cfg)
+	if err != nil {
+		return nil, err
+	}
+	return cfg, nil
+}
+
+func handlerError(resp *http.Response) (Configs, error) {
+	b, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	log.Printf("Status code: %v", resp.StatusCode)
+	return nil, errors.New(string(b))
 }

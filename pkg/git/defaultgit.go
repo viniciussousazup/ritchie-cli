@@ -7,14 +7,14 @@ import (
 	githttp "gopkg.in/src-d/go-git.v4/plumbing/transport/http"
 )
 
-type repoManager struct{}
+type defaultManager struct{}
 
-// NewRepoManager creates a default instance of RepoManager interface
-func NewRepoManager() *repoManager {
-	return &repoManager{}
+// NewDefaultManager creates a default instance of RepoManager interface
+func NewDefaultManager() *defaultManager {
+	return &defaultManager{}
 }
 
-func (*repoManager) PlainClone(path string, o *Options) error {
+func (*defaultManager) PlainClone(path string, o *Options) error {
 	_, err := gogit.PlainClone(path, false, &gogit.CloneOptions{
 		Auth: &githttp.BasicAuth{
 			Username: o.Credential.Username,
@@ -26,7 +26,7 @@ func (*repoManager) PlainClone(path string, o *Options) error {
 	return err
 }
 
-func (*repoManager) Pull(path string, o *Options) error {
+func (*defaultManager) Pull(path string, o *Options) error {
 	r, err := gogit.PlainOpen(path)
 	if err != nil {
 		return nil

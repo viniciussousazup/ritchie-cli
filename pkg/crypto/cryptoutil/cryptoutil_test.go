@@ -25,3 +25,4 @@ func TestDecrypt(t *testing.T) {
 	plaintxt := Decrypt(ciphkey, "Q0jhx4gItMsD")
 	is.Equal(plaintxt, "radiation")
 }
+
