@@ -57,12 +57,14 @@ func (d *defaultManager) Run(def Definition) error {
 			var err error
 			var inputval string
 			var valbool bool
-			items := input.Items
-
+			items, err := d.loadItems(input, formulaPath)
+			if err != nil {
+				return err
+			}
 			switch itype := input.Type; itype {
 			case "text":
 				if items != nil {
-					inputval, err = prompt.List(input.Label, items)
+					inputval, err = d.loadInputValList(items, input, formulaPath)
 				} else {
 					validate := input.Default == ""
 					inputval, err = prompt.String(input.Label, validate)
@@ -85,6 +87,7 @@ func (d *defaultManager) Run(def Definition) error {
 			}
 
 			if inputval != "" {
+				d.persistCache(formulaPath, inputval, input, items)
 				env := fmt.Sprintf(EnvPattern, strings.ToUpper(input.Name), inputval)
 				if i == 0 {
 					cmd.Env = append(os.Environ(), env)
@@ -106,6 +109,81 @@ func (d *defaultManager) Run(def Definition) error {
 	fmt.Println(string(out))
 
 	return nil
+}
+
+func (d *defaultManager) persistCache(formulaPath, inputVal string, input Input, items[]string) {
+	cachePath := fmt.Sprintf(CachePattern, formulaPath, strings.ToUpper(input.Name))
+	if input.Cache.Active {
+		if items == nil {
+			items = []string{inputVal}
+		} else {
+			for i, item := range items {
+				if item == inputVal { //Remove input to list
+					items = append(items[:i], items[i+1:]...)
+					break
+				}
+			}
+			items = append([]string{inputVal}, items...)
+		}
+		qtd := DefaultCacheQtd
+		if input.Cache.Qtd != 0 {
+			qtd = input.Cache.Qtd
+		}
+		if len(items) > qtd {
+			items = items[0:qtd]
+		}
+		itemsBytes, _ := json.Marshal(items)
+		fileutil.WriteFile(cachePath, itemsBytes)
+	}
+}
+
+func (d *defaultManager) loadInputValList(items []string, input Input, formulaPath string) (string, error) {
+	newLabel := DefaultCacheNewLabel
+	if input.Cache.Active {
+		if input.Cache.NewLabel != "" {
+			newLabel = input.Cache.NewLabel
+		}
+		items = append(items, newLabel)
+	}
+	inputval, err := prompt.List(input.Label, items)
+	if inputval == newLabel {
+		validate := input.Default == ""
+		inputval, err = prompt.String(input.Label, validate)
+		if inputval == "" {
+			inputval = input.Default
+		}
+	}
+	return inputval, err
+}
+
+func (d *defaultManager) loadItems(input Input, formulaPath string) ([]string, error) {
+	if input.Cache.Active {
+		cachePath := fmt.Sprintf(CachePattern, formulaPath, strings.ToUpper(input.Name))
+		if fileutil.Exists(cachePath) {
+			fileBytes, err := fileutil.ReadFile(cachePath)
+			if err != nil {
+				return nil, err
+			}
+			var items []string
+			err = json.Unmarshal(fileBytes, &items)
+			if err != nil {
+				return nil, err
+			}
+			return items, nil
+		} else {
+			itemsBytes, err := json.Marshal(input.Items)
+			if err != nil {
+				return nil, err
+			}
+			err = fileutil.WriteFile(cachePath, itemsBytes)
+			if err != nil {
+				return nil, err
+			}
+			return input.Items, nil
+		}
+	} else {
+		return input.Items, nil
+	}
 }
 
 func (d *defaultManager) resolveIfReserved(input Input) (string, error) {
