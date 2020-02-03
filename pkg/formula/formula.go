@@ -19,6 +19,11 @@ const (
 	windows    = "windows"
 	// EnvPattern pattern to build envs
 	EnvPattern = "%s=%s"
+	//Cache pattern
+	CachePattern = "%s/.%s.cache"
+
+	DefaultCacheNewLabel = "Type new value?"
+	DefaultCacheQtd = 5
 )
 
 // Config type that represents formula config
@@ -34,6 +39,13 @@ type Input struct {
 	Default string   `json:"default"`
 	Label   string   `json:"label"`
 	Items   []string `json:"items"`
+	Cache	Cache 	 `json:"cache"`
+}
+
+type Cache struct {
+	Active		bool	`json:"active"`
+	Qtd			int		`json:"qtd"`
+	NewLabel	string	`json:"newLabel"`
 }
 
 // Definition type that represents a Formula
