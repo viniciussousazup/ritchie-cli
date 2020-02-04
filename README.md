@@ -8,21 +8,13 @@ Transform your daily task into simple commands by using Ritchie-CLI. This tool u
 
 For install Ritchie-CLI follow the step-by-step:
 
-Installing from the script (Linux):
+Installing from the script (Linux/Mac):
 
 ```
-curl -fsSL -o install.sh http://ritchie-cli-bucket152849730126474.s3-website-sa-east-1.amazonaws.com/install.sh
-chmod +x install.sh
-./install.sh linux bash ou ./install.sh linux zsh
+sh -c "$(curl -fsSL http://ritchie-cli-bucket152849730126474.s3-website-sa-east-1.amazonaws.com/install.sh)"
 ```
 
-Installing from the script (Mac):
 
-```
-curl -fsSL -o install.sh http://ritchie-cli-bucket152849730126474.s3-website-sa-east-1.amazonaws.com/install.sh
-chmod +x install.sh
-./install.sh mac bash ou ./install.sh mac zsh
-```
 
 Installing from the [ Binaries ](Release.md)
 
