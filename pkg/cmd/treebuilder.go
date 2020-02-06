@@ -2,10 +2,12 @@ package cmd
 
 import (
 	"fmt"
+	"log"
+
+	"github.com/spf13/cobra"
+
 	"github.com/ZupIT/ritchie-cli/pkg/autocomplete"
 	"github.com/ZupIT/ritchie-cli/pkg/slice/sliceutil"
-	"github.com/spf13/cobra"
-	"log"
 
 	"github.com/ZupIT/ritchie-cli/pkg/credential"
 	"github.com/ZupIT/ritchie-cli/pkg/formula"
@@ -100,6 +102,7 @@ func (b *treeBuilder) processTree(treeCmd *tree.Representation, rootCmd *cobra.C
 				annotations = make(map[string]string)
 				annotations["formulaPath"] = f.Path
 				annotations["formulaBin"] = f.Bin
+				annotations["formulaConfig"] = f.Config
 				cmd = &cobra.Command{
 					Use:   v.Usage,
 					Short: v.Help,
@@ -109,9 +112,11 @@ func (b *treeBuilder) processTree(treeCmd *tree.Representation, rootCmd *cobra.C
 						if cmd.Annotations != nil {
 							fPath := cmd.Annotations["formulaPath"]
 							fBin := cmd.Annotations["formulaBin"]
+							fConf := cmd.Annotations["formulaConfig"]
 							frm := formula.Definition{
-								Path: fPath,
-								Bin:  fBin,
+								Path:   fPath,
+								Bin:    fBin,
+								Config: fConf,
 							}
 							b.formulaManager.Run(frm)
 						}

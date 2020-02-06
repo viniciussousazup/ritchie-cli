@@ -3,7 +3,6 @@ package formula
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/ZupIT/ritchie-cli/pkg/file/fileutil"
 	"io/ioutil"
 	"log"
 	"os"
@@ -11,6 +10,8 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+
+	"github.com/ZupIT/ritchie-cli/pkg/file/fileutil"
 
 	"github.com/ZupIT/ritchie-cli/pkg/env"
 	"github.com/ZupIT/ritchie-cli/pkg/prompt"
@@ -27,7 +28,7 @@ func NewDefaultManager(ritchieHome string, ee env.Resolvers) *defaultManager {
 	return &defaultManager{ritchieHome: ritchieHome, envResolvers: ee}
 }
 
-//Run default implementation of function Manager.Run
+// Run default implementation of function Manager.Run
 func (d *defaultManager) Run(def Definition) error {
 	formulaPath := def.FormulaPath(d.ritchieHome)
 
@@ -96,6 +97,10 @@ func (d *defaultManager) Run(def Definition) error {
 				}
 			}
 		}
+		if config.Command != "" {
+			command := fmt.Sprintf(EnvPattern, CommandEnv, config.Command)
+			cmd.Env = append(cmd.Env, command)
+		}
 	}
 
 	if err := cmd.Start(); err != nil {
@@ -111,14 +116,14 @@ func (d *defaultManager) Run(def Definition) error {
 	return nil
 }
 
-func (d *defaultManager) persistCache(formulaPath, inputVal string, input Input, items[]string) {
+func (d *defaultManager) persistCache(formulaPath, inputVal string, input Input, items []string) {
 	cachePath := fmt.Sprintf(CachePattern, formulaPath, strings.ToUpper(input.Name))
 	if input.Cache.Active {
 		if items == nil {
 			items = []string{inputVal}
 		} else {
 			for i, item := range items {
-				if item == inputVal { //Remove input to list
+				if item == inputVal { // Remove input to list
 					items = append(items[:i], items[i+1:]...)
 					break
 				}

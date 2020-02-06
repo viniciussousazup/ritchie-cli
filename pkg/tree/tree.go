@@ -16,8 +16,9 @@ type Command struct {
 
 // Formula type
 type Formula struct {
-	Path string `json:"path"`
-	Bin  string `json:"bin"`
+	Path   string `json:"path"`
+	Bin    string `json:"bin"`
+	Config string `json:"config"`
 }
 
 //go:generate $GOPATH/bin/moq -out mock_treemanager.go . Manager
