@@ -30,6 +30,60 @@ const (
 
 	// AES passphrase
 	passphrase = "zYtBIK67fCmhrU0iUbPQ1Cf9"
+	htmlClose = `<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title>Login Ritchie</title>
+    <style>
+      html, body {
+        height: 100%;
+        justify-content: center;
+        align-items: center; 
+      }
+
+      .container {
+      	display: flex;
+        justify-content: center;
+        color: '#111';
+        font-size: 30px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      Login Successful
+    </div>
+    <div class="container">
+      <span id="counter">5</span>s to close browser.
+    </div>
+    <div class="container">
+      If not close return to CLI.
+    </div>
+  </body>
+
+  <script type="text/javascript"> 
+    (function startSetInterval() {
+      let count = 5;
+
+      const interval = setInterval(function t() {
+        const counter = document.getElementById('counter')
+        counter.innerText = count;
+
+        if (count === 0) {
+          clearInterval(interval)
+          window.close()
+        }
+
+        count = count - 1;
+        return t;
+      }(), 1000); 
+    }())
+</script>
+
+</html>`
 )
 
 type defaultManager struct {
@@ -110,30 +164,10 @@ func (d *defaultManager) handler(provider *oidc.Provider, state, organization st
 			http.Error(w, "Failed to create session: "+err.Error(), http.StatusInternalServerError)
 			go stopServer()
 		}
-		w.Write([]byte(loginSuccessful()))
+		w.Write([]byte(htmlClose))
 		log.Printf("Login ok!")
 		go stopServer()
 	}
-}
-
-func loginSuccessful() string {
-	return `<html>
-				<head>
-				</head>
-				<body> 
-					<p style="text-align:center">Login successful, return to Rit CLI!</br>This window will close automatically within <span id="counter">5</span> second(s).</p> 
-					<script type="text/javascript">
-						function countdown() {
-							var i = document.getElementById('counter');
-							i.innerHTML = parseInt(i.innerHTML)-1;
-					 		if (parseInt(i.innerHTML)<=0) {
-					  			window.close();
-					 		}
-						}
-						setInterval(function(){ countdown(); },1000);
-					</script>
-				</body>
-			</html>`
 }
 
 func (d *defaultManager) createSession(token, username, organization string) error {
