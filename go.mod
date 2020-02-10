@@ -7,7 +7,7 @@ require (
 	github.com/coreos/go-oidc v2.1.0+incompatible
 	github.com/denisbrodbeck/machineid v1.0.1
 	github.com/google/go-github/v28 v28.1.1 // indirect
-	github.com/google/uuid v1.1.1 // indirect
+	github.com/google/uuid v1.1.1
 	github.com/hashicorp/go-getter v1.4.0 // indirect
 	github.com/manifoldco/promptui v0.3.2
 	github.com/matryer/is v1.2.0
