@@ -11,6 +11,7 @@ import (
 	"github.com/ZupIT/ritchie-cli/pkg/file/fileutil"
 	"github.com/coreos/go-oidc"
 	"github.com/denisbrodbeck/machineid"
+	"github.com/google/uuid"
 	"golang.org/x/oauth2"
 	"io"
 	"io/ioutil"
@@ -24,12 +25,10 @@ import (
 
 const (
 	sessionFilePattern = "%s/.session"
+	passphraseFilePattern = "%s/.passphrase"
 
 	callbackUrl = "http://localhost:8888/ritchie/callback"
 	providerUrl = "%s/oauth"
-
-	// AES passphrase
-	passphrase = "zYtBIK67fCmhrU0iUbPQ1Cf9"
 	htmlClose = `<!DOCTYPE html>
 
 <html>
@@ -176,6 +175,10 @@ func (d *defaultManager) createSession(token, username, organization string) err
 		Organization: organization,
 		Username:     username,
 	}
+	passphrase, err := d.readPassPhrase()
+	if err != nil {
+		return err
+	}
 
 	b, err := json.Marshal(session)
 	if err != nil {
@@ -254,6 +257,10 @@ func (d *defaultManager) Session() (*Session, error) {
 	if err != nil {
 		return nil, err
 	}
+	passphrase, err := d.readPassPhrase()
+	if err != nil {
+		return nil, err
+	}
 	id, err := machineid.ID()
 	if err != nil {
 		return nil, err
@@ -267,4 +274,20 @@ func (d *defaultManager) Session() (*Session, error) {
 		return nil, err
 	}
 	return session, nil
+}
+
+func (d *defaultManager) readPassPhrase() (string, error){
+	passPhraseFilePath := fmt.Sprintf(passphraseFilePattern, d.homePath)
+	if !fileutil.Exists(passPhraseFilePath) {
+		passPhrase := uuid.New().String()
+		err := fileutil.WriteFile(passPhraseFilePath, []byte(passPhrase))
+		if err != nil {
+			return "", err
+		}
+	}
+	p, err := fileutil.ReadFile(passPhraseFilePath)
+	if err != nil {
+		return "", err
+	}
+	return string(p), nil
 }
