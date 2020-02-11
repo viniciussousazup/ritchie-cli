@@ -66,8 +66,4 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := rootCmd.Execute(); err != nil {
-		_, _ = fmt.Fprintf(os.Stderr, "Error: %+v\n", err)
-		os.Exit(1)
-	}
 }
