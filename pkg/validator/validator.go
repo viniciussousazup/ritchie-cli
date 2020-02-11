@@ -3,9 +3,16 @@ package validator
 import (
 	"errors"
 	"fmt"
+	"github.com/ZupIT/ritchie-cli/pkg/env"
 	"github.com/ZupIT/ritchie-cli/pkg/file/fileutil"
+	"net/http"
 	"net/url"
 	"regexp"
+	"time"
+)
+
+const (
+	urlPatternVersion = "%s/version"
 )
 
 //IsValidName validates a name of something
@@ -56,5 +63,19 @@ func IsValidEmail(email string) error {
 	if !rgx.MatchString(email) {
 		return fmt.Errorf("%s is not a valid email", email)
 	}
+	return nil
+}
+
+//IsValidVersion Validade version with server
+func IsValidVersion(version string) error {
+	url := fmt.Sprintf(urlPatternVersion, env.ServerUrl)
+
+	c := http.Client{Timeout: 2 * time.Second}
+	resp, err := c.Get(url)
+	if err != nil {
+		return fmt.Errorf("%s error ", url)
+	}
+
+	defer resp.Body.Close()
 	return nil
 }
