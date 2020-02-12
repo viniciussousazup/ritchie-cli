@@ -1,12 +1,14 @@
 package validator
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/ZupIT/ritchie-cli/pkg/env"
 	"github.com/ZupIT/ritchie-cli/pkg/file/fileutil"
+	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"regexp"
 	"time"
 )
@@ -14,7 +16,9 @@ import (
 const (
 	urlPatternVersion = "%s/version"
 )
-
+type versionCli struct{
+	version string
+}
 //IsValidName validates a name of something
 func IsValidName(args []string) error {
 	n := len(args)
@@ -67,15 +71,24 @@ func IsValidEmail(email string) error {
 }
 
 //IsValidVersion Validade version with server
-func IsValidVersion(version string) error {
-	url := fmt.Sprintf(urlPatternVersion, env.ServerUrl)
+func IsValidVersion(version string) {
+	//url := fmt.Sprintf(urlPatternVersion, env.ServerUrl)
 
+	log.Println(os.Getenv("COMMAND"))
+	//go getValidate(url)
+}
+
+func getValidate(url string) {
 	c := http.Client{Timeout: 2 * time.Second}
-	resp, err := c.Get(url)
+	resp, err:= c.Get(url)
+   	if err != nil {
+        return
+    }
+	defer resp.Body.Close()
+	v := new(versionCli)
+	err = json.NewDecoder(resp.Body).Decode(v)
 	if err != nil {
-		return fmt.Errorf("%s error ", url)
+		return
 	}
 
-	defer resp.Body.Close()
-	return nil
 }

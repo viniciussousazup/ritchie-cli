@@ -29,8 +29,8 @@ func NewLoginCmd(loginManager login.Manager) *cobra.Command {
 }
 
 func (o *loginCmd) prompt() error {
-	go validator.IsValidVersion(Version)
-
+	validator.IsValidVersion(Version)
+	//go validator.IsValidVersion(Version)
 	org, err := prompt.String("Login [Organization]: ", true)
 	if err != nil {
 		return err
