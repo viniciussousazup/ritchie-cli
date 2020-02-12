@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/ZupIT/ritchie-cli/pkg/autocomplete"
+	"github.com/ZupIT/ritchie-cli/pkg/context"
 	"github.com/ZupIT/ritchie-cli/pkg/slice/sliceutil"
 
 	"github.com/ZupIT/ritchie-cli/pkg/credential"
@@ -19,10 +20,10 @@ import (
 
 var (
 	coreCmds = []string{
-		"root_init", "root_set", "root_set_credential", "root_create",
-		"root_create_user", "root_delete", "root_delete_user",
-		"root_help", "root_login", "root_completion",
-		"root_completion_zsh", "root_completion_bash"}
+		"root_init", "root_set", "root_set_credential", "root_set_context",
+		"root_create", "root_create_user", "root_delete", "root_delete_user",
+		"root_delete_context", "root_show", "root_show_context", "root_help",
+		"root_login", "root_completion", "root_completion_zsh", "root_completion_bash"}
 )
 
 // treeBuilder type that represents the tree builder
@@ -34,6 +35,7 @@ type treeBuilder struct {
 	loginManager        login.Manager
 	userManager         user.Manager
 	autocompleteManager autocomplete.Manager
+	ctxManager          context.Manager
 }
 
 // NewTreeBuilder creates new builder instance
@@ -45,6 +47,7 @@ func NewTreeBuilder(
 	l login.Manager,
 	u user.Manager,
 	a autocomplete.Manager,
+	ct context.Manager,
 ) *treeBuilder {
 	return &treeBuilder{
 		treeManager:         t,
@@ -54,6 +57,7 @@ func NewTreeBuilder(
 		loginManager:        l,
 		userManager:         u,
 		autocompleteManager: a,
+		ctxManager:          ct,
 	}
 }
 
@@ -62,20 +66,29 @@ func (b *treeBuilder) BuildTree() (*cobra.Command, error) {
 	rootCmd := NewRootCmd(b.workspaceManager)
 	initCmd := NewInitCmd(b.workspaceManager)
 	setCmd := NewSetCmd()
+	showCmd := NewShowCmd()
 	createCmd := NewCreateCmd()
 	deleteCmd := NewDeleteCmd()
 	loginCmd := NewLoginCmd(b.loginManager)
 	setCredentialCmd := NewSetCredentialCmd(b.credManager)
+	setCtxCmd := NewSetContextCmd(b.ctxManager)
 	createUserCmd := NewCreateUserCmd(b.userManager)
 	deleteUserCmd := NewDeleteUserCmd(b.userManager)
+	deleteCtxCmd := NewDeleteContextCmd(b.ctxManager)
 	autocompleteCmd := NewAutocompleteCmd()
 	autocompleteZsh := NewAutocompleteZsh(b.autocompleteManager)
 	autocompleteBash := NewAutocompleteBash(b.autocompleteManager)
+	showCtxCmd := NewShowContextCmd(b.ctxManager)
+
 	autocompleteCmd.AddCommand(autocompleteZsh, autocompleteBash)
 	setCmd.AddCommand(setCredentialCmd)
+	setCmd.AddCommand(setCtxCmd)
 	createCmd.AddCommand(createUserCmd)
 	deleteCmd.AddCommand(deleteUserCmd)
-	rootCmd.AddCommand(initCmd, setCmd, createCmd, deleteCmd, loginCmd, autocompleteCmd)
+	deleteCmd.AddCommand(deleteCtxCmd)
+	showCmd.AddCommand(showCtxCmd)
+
+	rootCmd.AddCommand(initCmd, setCmd, createCmd, deleteCmd, loginCmd, autocompleteCmd, showCmd)
 
 	treeCmd, err := b.treeManager.GetLocalTree()
 	if err != nil {

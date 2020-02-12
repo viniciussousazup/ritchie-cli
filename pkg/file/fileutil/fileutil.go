@@ -135,7 +135,7 @@ func WriteFile(path string, content []byte) error {
 	return ioutil.WriteFile(path, content, 0644)
 }
 
-// RemoveFile wrapper for os.Remove
+// RemoveFile wrapper for os.Delete
 func RemoveFile(path string) error {
 	return os.Remove(path)
 }

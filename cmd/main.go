@@ -2,11 +2,14 @@ package main
 
 import (
 	"fmt"
-	"github.com/ZupIT/ritchie-cli/pkg/autocomplete"
 	"log"
 	"net/http"
 	"os"
 	"os/user"
+
+	"github.com/ZupIT/ritchie-cli/pkg/autocomplete"
+	"github.com/ZupIT/ritchie-cli/pkg/context"
+	"github.com/ZupIT/ritchie-cli/pkg/session"
 
 	"github.com/ZupIT/ritchie-cli/pkg/cmd"
 	"github.com/ZupIT/ritchie-cli/pkg/credential"
@@ -36,22 +39,24 @@ func main() {
 	}
 	ritchieHomePath := fmt.Sprintf(ritchieHomePattern, usr.HomeDir)
 
-	//deps
+	// deps
 	gitManager := git.NewDefaultManager()
-	loginManager := login.NewDefaultManager(ritchieHomePath, env.ServerUrl, http.DefaultClient)
-	treeManager := tree.NewDefaultManager(ritchieHomePath, env.ServerUrl, http.DefaultClient, loginManager)
-	credManager := credential.NewDefaultManager(env.ServerUrl, http.DefaultClient, loginManager)
-	userManager := ruser.NewDefaultManager(env.ServerUrl, http.DefaultClient, loginManager)
-	workspaceManager := workspace.NewDefaultManager(ritchieHomePath, env.ServerUrl, http.DefaultClient, treeManager, gitManager, credManager, loginManager)
-	autocompleteManager := autocomplete.NewDefaultManager(env.ServerUrl, http.DefaultClient, loginManager)
+	sessionManager := session.NewDefaultManager(ritchieHomePath)
+	loginManager := login.NewDefaultManager(ritchieHomePath, env.ServerUrl, http.DefaultClient, sessionManager)
+	treeManager := tree.NewDefaultManager(ritchieHomePath, env.ServerUrl, http.DefaultClient, sessionManager)
+	credManager := credential.NewDefaultManager(env.ServerUrl, http.DefaultClient, sessionManager)
+	userManager := ruser.NewDefaultManager(env.ServerUrl, http.DefaultClient, sessionManager)
+	workspaceManager := workspace.NewDefaultManager(ritchieHomePath, env.ServerUrl, http.DefaultClient, treeManager, gitManager, credManager, sessionManager)
+	autocompleteManager := autocomplete.NewDefaultManager(env.ServerUrl, http.DefaultClient)
+	ctxManager := context.NewDefaultManager(sessionManager)
 
 	credResolver := envcredential.NewResolver(credManager)
 	envResolvers := make(env.Resolvers)
 	envResolvers[env.Credential] = credResolver
 	formulaManager := formula.NewDefaultManager(ritchieHomePath, envResolvers)
 
-	//cmd tree
-	treeBuilder := cmd.NewTreeBuilder(treeManager, workspaceManager, credManager, formulaManager, loginManager, userManager, autocompleteManager)
+	// cmd tree
+	treeBuilder := cmd.NewTreeBuilder(treeManager, workspaceManager, credManager, formulaManager, loginManager, userManager, autocompleteManager, ctxManager)
 	rootCmd, err := treeBuilder.BuildTree()
 	if err != nil {
 		panic(err)
