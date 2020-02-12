@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/user"
+	"time"
 
 	"github.com/ZupIT/ritchie-cli/pkg/autocomplete"
 	"github.com/ZupIT/ritchie-cli/pkg/context"
@@ -18,6 +19,7 @@ import (
 	"github.com/ZupIT/ritchie-cli/pkg/formula"
 	"github.com/ZupIT/ritchie-cli/pkg/git"
 	"github.com/ZupIT/ritchie-cli/pkg/login"
+	"github.com/ZupIT/ritchie-cli/pkg/metrics"
 	"github.com/ZupIT/ritchie-cli/pkg/tree"
 	ruser "github.com/ZupIT/ritchie-cli/pkg/user"
 	"github.com/ZupIT/ritchie-cli/pkg/workspace"
@@ -49,7 +51,7 @@ func main() {
 	workspaceManager := workspace.NewDefaultManager(ritchieHomePath, env.ServerUrl, http.DefaultClient, treeManager, gitManager, credManager, sessionManager)
 	autocompleteManager := autocomplete.NewDefaultManager(env.ServerUrl, http.DefaultClient)
 	ctxManager := context.NewDefaultManager(sessionManager)
-
+	metricsManager := metrics.NewDefaultManager(env.ServerUrl, &http.Client{Timeout: 2 * time.Second}, loginManager)
 	credResolver := envcredential.NewResolver(credManager)
 	envResolvers := make(env.Resolvers)
 	envResolvers[env.Credential] = credResolver
@@ -62,8 +64,11 @@ func main() {
 		panic(err)
 	}
 
+	go metricsManager.SendCommand()
+
 	if err := rootCmd.Execute(); err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "Error: %+v\n", err)
 		os.Exit(1)
 	}
+
 }
