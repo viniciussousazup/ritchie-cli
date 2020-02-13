@@ -67,6 +67,7 @@ func (d *defaultManager) Save(secret *Secret) error {
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("x-org", s.Organization)
+	req.Header.Set("x-ctx", s.Context)
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", s.AccessToken))
 	resp, err := d.httpClient.Do(req)
 	if err != nil {
@@ -102,6 +103,7 @@ func (d *defaultManager) Get(provider string) (*Secret, error) {
 	}
 
 	req.Header.Set("x-org", s.Organization)
+	req.Header.Set("x-ctx", s.Context)
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", s.AccessToken))
 	resp, err := d.httpClient.Do(req)
 	if err != nil {
