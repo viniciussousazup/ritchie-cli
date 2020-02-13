@@ -33,7 +33,7 @@ func (o *loginCmd) prompt() error {
 		return err
 	}
 	log.Println("Starting login...")
-	err = o.loginManager.Authenticate(org)
+	err = o.loginManager.Authenticate(org, Version)
 	if err != nil {
 		return err
 	}

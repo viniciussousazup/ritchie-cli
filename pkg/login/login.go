@@ -25,5 +25,5 @@ type ProviderConfig struct {
 
 // Manager is an interface that we can use to perform login operations
 type Manager interface {
-	Authenticate(organization string) error
+	Authenticate(organization, version string) error
 }

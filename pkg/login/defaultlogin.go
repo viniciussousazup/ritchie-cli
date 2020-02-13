@@ -4,6 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/ZupIT/ritchie-cli/pkg/validator"
+	"github.com/coreos/go-oidc"
+	"golang.org/x/oauth2"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -11,10 +14,6 @@ import (
 	"os/exec"
 	"runtime"
 	"time"
-
-	"github.com/coreos/go-oidc"
-	"golang.org/x/oauth2"
-
 	"github.com/ZupIT/ritchie-cli/pkg/env"
 	"github.com/ZupIT/ritchie-cli/pkg/session"
 )
@@ -90,7 +89,7 @@ func NewDefaultManager(homePath, serverURL string, c *http.Client, s session.Man
 	return &defaultManager{homePath, serverURL, c, s}
 }
 
-func (d *defaultManager) Authenticate(organization string) error {
+func (d *defaultManager) Authenticate(organization,version string) error {
 	providerConfig, err := providerConfig(organization)
 	if err != nil {
 		return err
@@ -114,13 +113,13 @@ func (d *defaultManager) Authenticate(organization string) error {
 	if err != nil {
 		return err
 	}
-	http.HandleFunc("/ritchie/callback", d.handler(provider, state, organization, oauth2Config, ctx))
+	http.HandleFunc("/ritchie/callback", d.handler(provider, state, organization, version, oauth2Config, ctx))
 	log.Fatal(http.ListenAndServe("localhost:8888", nil))
 
 	return nil
 }
 
-func (d *defaultManager) handler(provider *oidc.Provider, state, organization string, oauth2Config oauth2.Config, ctx context.Context) http.HandlerFunc {
+func (d *defaultManager) handler(provider *oidc.Provider, state, organization,version string, oauth2Config oauth2.Config, ctx context.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		oidcConfig := &oidc.Config{
 			ClientID: oauth2Config.ClientID,
@@ -159,6 +158,7 @@ func (d *defaultManager) handler(provider *oidc.Provider, state, organization st
 		}
 		w.Write([]byte(htmlClose))
 		log.Printf("Login ok!")
+		validator.IsValidVersion(version, organization)
 		go stopServer()
 	}
 }

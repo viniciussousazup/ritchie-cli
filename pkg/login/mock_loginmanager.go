@@ -21,7 +21,7 @@ var _ Manager = &ManagerMock{}
 //
 //         // make and configure a mocked Manager
 //         mockedManager := &ManagerMock{
-//             AuthenticateFunc: func(organization string) error {
+//             AuthenticateFunc: func(organization string, version string) error {
 // 	               panic("mock out the Authenticate method")
 //             },
 //         }
@@ -32,7 +32,7 @@ var _ Manager = &ManagerMock{}
 //     }
 type ManagerMock struct {
 	// AuthenticateFunc mocks the Authenticate method.
-	AuthenticateFunc func(organization string) error
+	AuthenticateFunc func(organization string, version string) error
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -40,24 +40,28 @@ type ManagerMock struct {
 		Authenticate []struct {
 			// Organization is the organization argument value.
 			Organization string
+			// Version is the version argument value.
+			Version string
 		}
 	}
 }
 
 // Authenticate calls AuthenticateFunc.
-func (mock *ManagerMock) Authenticate(organization string) error {
+func (mock *ManagerMock) Authenticate(organization string, version string) error {
 	if mock.AuthenticateFunc == nil {
 		panic("ManagerMock.AuthenticateFunc: method is nil but Manager.Authenticate was just called")
 	}
 	callInfo := struct {
 		Organization string
+		Version      string
 	}{
 		Organization: organization,
+		Version:      version,
 	}
 	lockManagerMockAuthenticate.Lock()
 	mock.calls.Authenticate = append(mock.calls.Authenticate, callInfo)
 	lockManagerMockAuthenticate.Unlock()
-	return mock.AuthenticateFunc(organization)
+	return mock.AuthenticateFunc(organization, version)
 }
 
 // AuthenticateCalls gets all the calls that were made to Authenticate.
@@ -65,9 +69,11 @@ func (mock *ManagerMock) Authenticate(organization string) error {
 //     len(mockedManager.AuthenticateCalls())
 func (mock *ManagerMock) AuthenticateCalls() []struct {
 	Organization string
+	Version      string
 } {
 	var calls []struct {
 		Organization string
+		Version      string
 	}
 	lockManagerMockAuthenticate.RLock()
 	calls = mock.calls.Authenticate
