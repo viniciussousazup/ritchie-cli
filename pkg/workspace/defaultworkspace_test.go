@@ -3,18 +3,19 @@ package workspace
 import (
 	"context"
 	"fmt"
-	"github.com/ZupIT/ritchie-cli/pkg/file/fileutil"
 	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
 
+	"github.com/ZupIT/ritchie-cli/pkg/file/fileutil"
+	"github.com/ZupIT/ritchie-cli/pkg/session"
+
 	"github.com/matryer/is"
 
 	"github.com/ZupIT/ritchie-cli/pkg/credential"
 	"github.com/ZupIT/ritchie-cli/pkg/git"
-	"github.com/ZupIT/ritchie-cli/pkg/login"
 	"github.com/ZupIT/ritchie-cli/pkg/tree"
 )
 
@@ -44,7 +45,7 @@ func TestCheckWorkingDir(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.label, func(t *testing.T) {
-			workman := NewDefaultManager(test.in, serverURL, http.DefaultClient, &tree.ManagerMock{}, &git.RepoManagerMock{}, &credential.ManagerMock{}, &login.ManagerMock{})
+			workman := NewDefaultManager(test.in, serverURL, http.DefaultClient, &tree.ManagerMock{}, &git.RepoManagerMock{}, &credential.ManagerMock{}, &session.ManagerMock{})
 			err := workman.CheckWorkingDir()
 			is.NoErr(err)
 		})
@@ -106,13 +107,19 @@ func newTestingManager(handler http.Handler) (Manager, func()) {
 		},
 	}
 
-	logman := &login.ManagerMock{
-		SessionFunc: func() (*login.Session, error) {
-			return &login.Session{}, nil
+	sessionman := &session.ManagerMock{
+		CreateFunc: func(token string, username string, organization string) error {
+			return nil
+		},
+		GetFunc: func() (s *session.Session, err error) {
+			return &session.Session{}, nil
+		},
+		SetCtxFunc: func(ctx string) error {
+			return nil
 		},
 	}
 
-	workman := NewDefaultManager(home, s.URL, cli, treeman, repoman, credman, logman)
+	workman := NewDefaultManager(home, s.URL, cli, treeman, repoman, credman, sessionman)
 
 	return workman, s.Close
 }

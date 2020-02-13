@@ -8,7 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/ZupIT/ritchie-cli/pkg/login"
+	"github.com/ZupIT/ritchie-cli/pkg/session"
 )
 
 const (
@@ -16,18 +16,18 @@ const (
 )
 
 type defaultManager struct {
-	serverURL    string
-	httpClient   *http.Client
-	loginManager login.Manager
+	serverURL  string
+	httpClient *http.Client
+	session    session.Manager
 }
 
 // NewDefaultManager creates a default instance of Manager interface
-func NewDefaultManager(serverUrl string, c *http.Client, l login.Manager) *defaultManager {
-	return &defaultManager{serverURL: serverUrl, httpClient: c, loginManager: l}
+func NewDefaultManager(serverUrl string, c *http.Client, s session.Manager) *defaultManager {
+	return &defaultManager{serverURL: serverUrl, httpClient: c, session: s}
 }
 
 func (d *defaultManager) Create(user *Definition) error {
-	session, err := d.loginManager.Session()
+	s, err := d.session.Get()
 	if err != nil {
 		return err
 	}
@@ -44,8 +44,8 @@ func (d *defaultManager) Create(user *Definition) error {
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("x-org", session.Organization)
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", session.AccessToken))
+	req.Header.Set("x-org", s.Organization)
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", s.AccessToken))
 	resp, err := d.httpClient.Do(req)
 	if err != nil {
 		return err
@@ -67,7 +67,7 @@ func (d *defaultManager) Create(user *Definition) error {
 }
 
 func (d *defaultManager) Delete(user *Definition) error {
-	session, err := d.loginManager.Session()
+	s, err := d.session.Get()
 	if err != nil {
 		return err
 	}
@@ -84,8 +84,8 @@ func (d *defaultManager) Delete(user *Definition) error {
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("x-org", session.Organization)
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", session.AccessToken))
+	req.Header.Set("x-org", s.Organization)
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", s.AccessToken))
 	res, err := d.httpClient.Do(req)
 	if err != nil {
 		return err

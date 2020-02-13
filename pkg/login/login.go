@@ -15,12 +15,6 @@ var (
 	ErrUnknown = errors.New("Unknown error. Please, try again")
 )
 
-// Session type that represents a session of the user login
-type Session struct {
-	AccessToken  string `json:"access_token"`
-	Organization string `json:"organization"`
-	Username     string `json:"username"`
-}
 
 type ProviderConfig struct {
 	Url      string `json:"url"`
@@ -32,5 +26,4 @@ type ProviderConfig struct {
 // Manager is an interface that we can use to perform login operations
 type Manager interface {
 	Authenticate(organization, version string) error
-	Session() (*Session, error)
 }

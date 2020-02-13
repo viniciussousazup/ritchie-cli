@@ -9,7 +9,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/ZupIT/ritchie-cli/pkg/login"
+	"github.com/ZupIT/ritchie-cli/pkg/session"
 )
 
 const (
@@ -25,18 +25,18 @@ type credentialJSON struct {
 }
 
 type defaultManager struct {
-	serverURL    string
-	httpClient   *http.Client
-	loginManager login.Manager
+	serverURL  string
+	httpClient *http.Client
+	session    session.Manager
 }
 
 // NewDefaultManager creates a default instance of Manager interface
-func NewDefaultManager(serverURL string, c *http.Client, l login.Manager) *defaultManager {
-	return &defaultManager{serverURL: serverURL, httpClient: c, loginManager: l}
+func NewDefaultManager(serverURL string, c *http.Client, s session.Manager) *defaultManager {
+	return &defaultManager{serverURL: serverURL, httpClient: c, session: s}
 }
 
 func (d *defaultManager) Save(secret *Secret) error {
-	session, err := d.loginManager.Session()
+	s, err := d.session.Get()
 	if err != nil {
 		return err
 	}
@@ -66,8 +66,9 @@ func (d *defaultManager) Save(secret *Secret) error {
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("x-org", session.Organization)
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", session.AccessToken))
+	req.Header.Set("x-org", s.Organization)
+	req.Header.Set("x-ctx", s.Context)
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", s.AccessToken))
 	resp, err := d.httpClient.Do(req)
 	if err != nil {
 		return err
@@ -90,7 +91,7 @@ func (d *defaultManager) Save(secret *Secret) error {
 }
 
 func (d *defaultManager) Get(provider string) (*Secret, error) {
-	session, err := d.loginManager.Session()
+	s, err := d.session.Get()
 	if err != nil {
 		return nil, err
 	}
@@ -101,8 +102,9 @@ func (d *defaultManager) Get(provider string) (*Secret, error) {
 		return nil, err
 	}
 
-	req.Header.Set("x-org", session.Organization)
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", session.AccessToken))
+	req.Header.Set("x-org", s.Organization)
+	req.Header.Set("x-ctx", s.Context)
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", s.AccessToken))
 	resp, err := d.httpClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -115,7 +117,7 @@ func (d *defaultManager) Get(provider string) (*Secret, error) {
 		cred := &credentialJSON{}
 		json.NewDecoder(resp.Body).Decode(cred)
 		sec := &Secret{
-			Username:   session.Username,
+			Username:   s.Username,
 			Credential: cred.Credential,
 			Provider:   provider,
 		}
@@ -131,7 +133,7 @@ func (d *defaultManager) Get(provider string) (*Secret, error) {
 }
 
 func (d *defaultManager) Configs() (Configs, error) {
-	session, err := d.loginManager.Session()
+	s, err := d.session.Get()
 	if err != nil {
 		return nil, err
 	}
@@ -142,8 +144,9 @@ func (d *defaultManager) Configs() (Configs, error) {
 		return nil, err
 	}
 
-	req.Header.Set("x-org", session.Organization)
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", session.AccessToken))
+	req.Header.Set("x-org", s.Organization)
+	req.Header.Set("x-ctx", s.Context)
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", s.AccessToken))
 	resp, err := d.httpClient.Do(req)
 	if err != nil {
 		return nil, err

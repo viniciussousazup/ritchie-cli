@@ -9,7 +9,6 @@ import (
 
 var (
 	lockManagerMockAuthenticate sync.RWMutex
-	lockManagerMockSession      sync.RWMutex
 )
 
 // Ensure, that ManagerMock does implement Manager.
@@ -25,9 +24,6 @@ var _ Manager = &ManagerMock{}
 //             AuthenticateFunc: func(organization string, version string) error {
 // 	               panic("mock out the Authenticate method")
 //             },
-//             SessionFunc: func() (*Session, error) {
-// 	               panic("mock out the Session method")
-//             },
 //         }
 //
 //         // use mockedManager in code that requires Manager
@@ -38,9 +34,6 @@ type ManagerMock struct {
 	// AuthenticateFunc mocks the Authenticate method.
 	AuthenticateFunc func(organization string, version string) error
 
-	// SessionFunc mocks the Session method.
-	SessionFunc func() (*Session, error)
-
 	// calls tracks calls to the methods.
 	calls struct {
 		// Authenticate holds details about calls to the Authenticate method.
@@ -49,9 +42,6 @@ type ManagerMock struct {
 			Organization string
 			// Version is the version argument value.
 			Version string
-		}
-		// Session holds details about calls to the Session method.
-		Session []struct {
 		}
 	}
 }
@@ -88,31 +78,5 @@ func (mock *ManagerMock) AuthenticateCalls() []struct {
 	lockManagerMockAuthenticate.RLock()
 	calls = mock.calls.Authenticate
 	lockManagerMockAuthenticate.RUnlock()
-	return calls
-}
-
-// Session calls SessionFunc.
-func (mock *ManagerMock) Session() (*Session, error) {
-	if mock.SessionFunc == nil {
-		panic("ManagerMock.SessionFunc: method is nil but Manager.Session was just called")
-	}
-	callInfo := struct {
-	}{}
-	lockManagerMockSession.Lock()
-	mock.calls.Session = append(mock.calls.Session, callInfo)
-	lockManagerMockSession.Unlock()
-	return mock.SessionFunc()
-}
-
-// SessionCalls gets all the calls that were made to Session.
-// Check the length with:
-//     len(mockedManager.SessionCalls())
-func (mock *ManagerMock) SessionCalls() []struct {
-} {
-	var calls []struct {
-	}
-	lockManagerMockSession.RLock()
-	calls = mock.calls.Session
-	lockManagerMockSession.RUnlock()
 	return calls
 }

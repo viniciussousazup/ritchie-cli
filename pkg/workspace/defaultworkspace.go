@@ -4,17 +4,18 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/ZupIT/ritchie-cli/pkg/credential"
-	"github.com/ZupIT/ritchie-cli/pkg/file/fileutil"
-	"github.com/ZupIT/ritchie-cli/pkg/formula"
-	"github.com/ZupIT/ritchie-cli/pkg/git"
-	"github.com/ZupIT/ritchie-cli/pkg/login"
-	"github.com/ZupIT/ritchie-cli/pkg/tree"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/ZupIT/ritchie-cli/pkg/credential"
+	"github.com/ZupIT/ritchie-cli/pkg/file/fileutil"
+	"github.com/ZupIT/ritchie-cli/pkg/formula"
+	"github.com/ZupIT/ritchie-cli/pkg/git"
+	"github.com/ZupIT/ritchie-cli/pkg/session"
+	"github.com/ZupIT/ritchie-cli/pkg/tree"
 )
 
 const (
@@ -40,7 +41,7 @@ type defaultManager struct {
 	treeManager    tree.Manager
 	gitRepoManager git.RepoManager
 	credManager    credential.Manager
-	loginManager   login.Manager
+	session        session.Manager
 }
 
 // NewDefaultManager creates a default instance of Manager interface
@@ -51,7 +52,7 @@ func NewDefaultManager(
 	t tree.Manager,
 	g git.RepoManager,
 	cr credential.Manager,
-	l login.Manager,
+	s session.Manager,
 ) *defaultManager {
 	return &defaultManager{
 		ritchieHome:    ritchieHome,
@@ -60,7 +61,7 @@ func NewDefaultManager(
 		treeManager:    t,
 		gitRepoManager: g,
 		credManager:    cr,
-		loginManager:   l,
+		session:        s,
 	}
 }
 
@@ -75,8 +76,8 @@ func (d *defaultManager) CheckWorkingDir() error {
 
 // InitWorkingDir default implementation of function Manager.InitWorkingDir
 func (d *defaultManager) InitWorkingDir() error {
-	log.Println("Loading user session...")
-	session, err := d.loginManager.Session()
+	log.Println("Loading user s...")
+	s, err := d.session.Get()
 	if err != nil {
 		return err
 	}
@@ -97,8 +98,8 @@ func (d *defaultManager) InitWorkingDir() error {
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("x-org", session.Organization)
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", session.AccessToken))
+	req.Header.Set("x-org", s.Organization)
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", s.AccessToken))
 	resp, err := d.httpClient.Do(req)
 	if err != nil {
 		return err
