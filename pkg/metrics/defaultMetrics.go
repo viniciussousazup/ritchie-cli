@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	urlPatternMetricsUse = "%s/metrics/use"
+	urlPattern = "%s/metrics/use"
 )
 
 type defaultManager struct {
@@ -42,7 +42,7 @@ func (d *defaultManager) SendCommand() {
 		return
 	}
 
-	url := fmt.Sprintf(urlPatternMetricsUse, d.serverURL)
+	url := fmt.Sprintf(urlPattern, d.serverURL)
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(b))
 	if err != nil {
 		return
