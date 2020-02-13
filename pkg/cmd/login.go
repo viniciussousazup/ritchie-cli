@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"github.com/ZupIT/ritchie-cli/pkg/validator"
 	"log"
 
 	"github.com/spf13/cobra"
@@ -29,14 +28,12 @@ func NewLoginCmd(loginManager login.Manager) *cobra.Command {
 }
 
 func (o *loginCmd) prompt() error {
-	validator.IsValidVersion(Version)
-	//go validator.IsValidVersion(Version)
 	org, err := prompt.String("Login [Organization]: ", true)
 	if err != nil {
 		return err
 	}
 	log.Println("Starting login...")
-	err = o.loginManager.Authenticate(org)
+	err = o.loginManager.Authenticate(org, Version)
 	if err != nil {
 		return err
 	}
