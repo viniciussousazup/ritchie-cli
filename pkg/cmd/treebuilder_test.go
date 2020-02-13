@@ -44,7 +44,7 @@ func TestBuildTree(t *testing.T) {
 	}
 
 	logman := &login.ManagerMock{
-		AuthenticateFunc: func(organization string) error {
+		AuthenticateFunc: func(organization,version string) error {
 			return nil
 		},
 		SessionFunc: func() (*login.Session, error) {
