@@ -123,7 +123,7 @@ func (d *defaultManager) persistCache(formulaPath, inputVal string, input Input,
 			items = []string{inputVal}
 		} else {
 			for i, item := range items {
-				if item == inputVal { // Remove input to list
+				if item == inputVal { // Delete input to list
 					items = append(items[:i], items[i+1:]...)
 					break
 				}

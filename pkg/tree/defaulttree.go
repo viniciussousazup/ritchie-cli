@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/ZupIT/ritchie-cli/pkg/file/fileutil"
 	"io/ioutil"
 	"log"
 	"net/http"
 
-	"github.com/ZupIT/ritchie-cli/pkg/login"
+	"github.com/ZupIT/ritchie-cli/pkg/file/fileutil"
+	"github.com/ZupIT/ritchie-cli/pkg/session"
 )
 
 const (
@@ -22,12 +22,12 @@ type defaultManager struct {
 	ritchieHome  string
 	serverURL    string
 	httpClient   *http.Client
-	loginManager login.Manager
+	session    session.Manager
 }
 
 // NewDefaultManager creates a default instance of Manager interface
-func NewDefaultManager(ritchieHome, serverURL string, c *http.Client, l login.Manager) *defaultManager {
-	return &defaultManager{ritchieHome: ritchieHome, serverURL: serverURL, httpClient: c, loginManager: l}
+func NewDefaultManager(ritchieHome, serverURL string, c *http.Client, s session.Manager) *defaultManager {
+	return &defaultManager{ritchieHome: ritchieHome, serverURL: serverURL, httpClient: c, session: s}
 }
 
 // GetLocalTree default implementation of function Manager.GetLocalTree
@@ -52,7 +52,7 @@ func (d *defaultManager) GetLocalTree() (*Representation, error) {
 
 // LoadAndSaveTree default implementation of function Manager.SaveTree
 func (d *defaultManager) LoadAndSaveTree() error {
-	session, err := d.loginManager.Session()
+	s, err := d.session.Get()
 	if err != nil {
 		return err
 	}
@@ -63,8 +63,8 @@ func (d *defaultManager) LoadAndSaveTree() error {
 		return err
 	}
 
-	req.Header.Set("x-org", session.Organization)
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", session.AccessToken))
+	req.Header.Set("x-org", s.Organization)
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", s.AccessToken))
 	resp, err := d.httpClient.Do(req)
 	if err != nil {
 		return err

@@ -2,18 +2,8 @@ package login
 
 import (
 	"context"
-	"crypto/md5"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"github.com/ZupIT/ritchie-cli/pkg/crypto/cryptoutil"
-	"github.com/ZupIT/ritchie-cli/pkg/env"
-	"github.com/ZupIT/ritchie-cli/pkg/file/fileutil"
-	"github.com/coreos/go-oidc"
-	"github.com/denisbrodbeck/machineid"
-	"github.com/google/uuid"
-	"golang.org/x/oauth2"
-	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -21,15 +11,18 @@ import (
 	"os/exec"
 	"runtime"
 	"time"
+
+	"github.com/coreos/go-oidc"
+	"golang.org/x/oauth2"
+
+	"github.com/ZupIT/ritchie-cli/pkg/env"
+	"github.com/ZupIT/ritchie-cli/pkg/session"
 )
 
 const (
-	sessionFilePattern = "%s/.session"
-	passphraseFilePattern = "%s/.passphrase"
-
 	callbackUrl = "http://localhost:8888/ritchie/callback"
 	providerUrl = "%s/oauth"
-	htmlClose = `<!DOCTYPE html>
+	htmlClose   = `<!DOCTYPE html>
 
 <html>
   <head>
@@ -89,11 +82,12 @@ type defaultManager struct {
 	homePath   string
 	serverURL  string
 	httpClient *http.Client
+	session    session.Manager
 }
 
 // NewDefaultManager creates a default instance of Manager interface
-func NewDefaultManager(homePath, serverURL string, httpClient *http.Client) *defaultManager {
-	return &defaultManager{homePath, serverURL, httpClient}
+func NewDefaultManager(homePath, serverURL string, c *http.Client, s session.Manager) *defaultManager {
+	return &defaultManager{homePath, serverURL, c, s}
 }
 
 func (d *defaultManager) Authenticate(organization string) error {
@@ -158,7 +152,7 @@ func (d *defaultManager) handler(provider *oidc.Provider, state, organization st
 			Username string `json:"preferred_username"`
 		}{}
 		idToken.Claims(&user)
-		err = d.createSession(token, user.Username, organization)
+		err = d.session.Create(token, user.Username, organization)
 		if err != nil {
 			http.Error(w, "Failed to create session: "+err.Error(), http.StatusInternalServerError)
 			go stopServer()
@@ -167,41 +161,6 @@ func (d *defaultManager) handler(provider *oidc.Provider, state, organization st
 		log.Printf("Login ok!")
 		go stopServer()
 	}
-}
-
-func (d *defaultManager) createSession(token, username, organization string) error {
-	session := &Session{
-		AccessToken:  token,
-		Organization: organization,
-		Username:     username,
-	}
-	passphrase, err := d.readPassPhrase()
-	if err != nil {
-		return err
-	}
-
-	b, err := json.Marshal(session)
-	if err != nil {
-		return err
-	}
-	id, err := machineid.ID()
-	if err != nil {
-		return err
-	}
-	h := md5.New()
-	io.WriteString(h, passphrase)
-	io.WriteString(h, id)
-	cipher := cryptoutil.Encrypt(string(h.Sum(nil)), string(b))
-	sessFilePath := fmt.Sprintf(sessionFilePattern, d.homePath)
-	err = fileutil.WriteFile(sessFilePath, []byte(cipher))
-	if err != nil {
-		return err
-	}
-	err = os.Chmod(sessFilePath, 0600)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func stopServer() {
@@ -246,48 +205,4 @@ func providerConfig(organization string) (ProviderConfig, error) {
 	}
 	json.Unmarshal(bodyBytes, &provideConfig)
 	return provideConfig, nil
-}
-
-func (d *defaultManager) Session() (*Session, error) {
-	sessFilePath := fmt.Sprintf(sessionFilePattern, d.homePath)
-	if !fileutil.Exists(sessFilePath) {
-		return nil, errors.New("Please, you need to login first")
-	}
-	b, err := fileutil.ReadFile(sessFilePath)
-	if err != nil {
-		return nil, err
-	}
-	passphrase, err := d.readPassPhrase()
-	if err != nil {
-		return nil, err
-	}
-	id, err := machineid.ID()
-	if err != nil {
-		return nil, err
-	}
-	h := md5.New()
-	io.WriteString(h, passphrase)
-	io.WriteString(h, id)
-	plain := cryptoutil.Decrypt(string(h.Sum(nil)), string(b))
-	session := &Session{}
-	if err := json.Unmarshal([]byte(plain), session); err != nil {
-		return nil, err
-	}
-	return session, nil
-}
-
-func (d *defaultManager) readPassPhrase() (string, error){
-	passPhraseFilePath := fmt.Sprintf(passphraseFilePattern, d.homePath)
-	if !fileutil.Exists(passPhraseFilePath) {
-		passPhrase := uuid.New().String()
-		err := fileutil.WriteFile(passPhraseFilePath, []byte(passPhrase))
-		if err != nil {
-			return "", err
-		}
-	}
-	p, err := fileutil.ReadFile(passPhraseFilePath)
-	if err != nil {
-		return "", err
-	}
-	return string(p), nil
 }

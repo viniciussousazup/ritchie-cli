@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"github.com/ZupIT/ritchie-cli/pkg/autocomplete"
+	"github.com/ZupIT/ritchie-cli/pkg/context"
+
 	"testing"
 
 	"github.com/matryer/is"
@@ -47,9 +49,6 @@ func TestBuildTree(t *testing.T) {
 		AuthenticateFunc: func(organization string) error {
 			return nil
 		},
-		SessionFunc: func() (*login.Session, error) {
-			return &login.Session{}, nil
-		},
 	}
 
 	userman := &user.ManagerMock{
@@ -67,7 +66,13 @@ func TestBuildTree(t *testing.T) {
 		},
 	}
 
-	builder := NewTreeBuilder(treeman, workman, credman, forman, logman, userman, automan)
+	ctxman := &context.ManagerMock{
+		SetFunc: func(string) error {
+			return nil
+		},
+	}
+
+	builder := NewTreeBuilder(treeman, workman, credman, forman, logman, userman, automan, ctxman)
 	cmd, err := builder.BuildTree()
 	is.NoErr(err)
 	is.True(cmd.HasSubCommands())
