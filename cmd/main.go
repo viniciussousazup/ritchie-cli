@@ -51,7 +51,7 @@ func main() {
 	workspaceManager := workspace.NewDefaultManager(ritchieHomePath, env.ServerUrl, http.DefaultClient, treeManager, gitManager, credManager, sessionManager)
 	autocompleteManager := autocomplete.NewDefaultManager(env.ServerUrl, http.DefaultClient)
 	ctxManager := context.NewDefaultManager(sessionManager)
-	metricsManager := metrics.NewDefaultManager(env.ServerUrl, &http.Client{Timeout: 2 * time.Second}, loginManager)
+	metricsManager := metrics.NewDefaultManager(env.ServerUrl, &http.Client{Timeout: 2 * time.Second}, sessionManager)
 	credResolver := envcredential.NewResolver(credManager)
 	envResolvers := make(env.Resolvers)
 	envResolvers[env.Credential] = credResolver
