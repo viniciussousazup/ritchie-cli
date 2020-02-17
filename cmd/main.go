@@ -49,7 +49,7 @@ func main() {
 	credManager := credential.NewDefaultManager(env.ServerUrl, http.DefaultClient, sessionManager)
 	userManager := ruser.NewDefaultManager(env.ServerUrl, http.DefaultClient, sessionManager)
 	workspaceManager := workspace.NewDefaultManager(ritchieHomePath, env.ServerUrl, http.DefaultClient, treeManager, gitManager, credManager, sessionManager)
-	autocompleteManager := autocomplete.NewDefaultManager(env.ServerUrl, http.DefaultClient)
+	autocompleteManager := autocomplete.NewDefaultManager(env.ServerUrl, ritchieHomePath, http.DefaultClient)
 	ctxManager := context.NewDefaultManager(sessionManager)
 	metricsManager := metrics.NewDefaultManager(env.ServerUrl, &http.Client{Timeout: 2 * time.Second}, sessionManager)
 	credResolver := envcredential.NewResolver(credManager)
