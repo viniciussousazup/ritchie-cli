@@ -44,8 +44,8 @@ func main() {
 	// deps
 	gitManager := git.NewDefaultManager()
 	sessionManager := session.NewDefaultManager(ritchieHomePath)
-	loginManager := login.NewDefaultManager(ritchieHomePath, env.ServerUrl, http.DefaultClient, sessionManager)
 	treeManager := tree.NewDefaultManager(ritchieHomePath, env.ServerUrl, http.DefaultClient, sessionManager)
+	loginManager := login.NewDefaultManager(ritchieHomePath, env.ServerUrl, http.DefaultClient, sessionManager, treeManager)
 	credManager := credential.NewDefaultManager(env.ServerUrl, http.DefaultClient, sessionManager)
 	userManager := ruser.NewDefaultManager(env.ServerUrl, http.DefaultClient, sessionManager)
 	workspaceManager := workspace.NewDefaultManager(ritchieHomePath, env.ServerUrl, http.DefaultClient, treeManager, gitManager, credManager, sessionManager)
