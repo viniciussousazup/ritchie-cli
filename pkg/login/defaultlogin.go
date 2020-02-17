@@ -83,11 +83,18 @@ type defaultManager struct {
 	serverURL  string
 	httpClient *http.Client
 	session    session.Manager
+	treeManager tree.Manager
 }
 
 // NewDefaultManager creates a default instance of Manager interface
-func NewDefaultManager(homePath, serverURL string, c *http.Client, s session.Manager) *defaultManager {
-	return &defaultManager{homePath, serverURL, c, s}
+func NewDefaultManager(homePath, serverURL string, c *http.Client, s session.Manager, treeManager tree.Manager) *defaultManager {
+	return &defaultManager{
+		homePath:    homePath,
+		serverURL:   serverURL,
+		httpClient:  c,
+		session:     s,
+		treeManager: treeManager,
+	}
 }
 
 func (d *defaultManager) Authenticate(organization,version string) error {
@@ -165,10 +172,9 @@ func (d *defaultManager) handler(provider *oidc.Provider, state, organization,ve
 	}
 }
 
-func (d defaultManager) LoadAndSaveTreeFile() {
+func (d *defaultManager) LoadAndSaveTreeFile() {
 	log.Println("Starting create tree file.")
-	treeManager := tree.NewDefaultManager(d.homePath, d.serverURL, d.httpClient, d.session)
-	err := treeManager.LoadAndSaveTree()
+	err := d.treeManager.LoadAndSaveTree()
 	if err != nil {
 		log.Fatalln("Error to create tree file!")
 	}
