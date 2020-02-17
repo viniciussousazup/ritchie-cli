@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/ZupIT/ritchie-cli/pkg/tree"
 	"github.com/ZupIT/ritchie-cli/pkg/validator"
 	"github.com/coreos/go-oidc"
 	"golang.org/x/oauth2"
@@ -160,7 +161,18 @@ func (d *defaultManager) handler(provider *oidc.Provider, state, organization,ve
 		log.Printf("Login ok!")
 		validator.IsValidVersion(version, organization)
 		go stopServer()
+		d.LoadAndSaveTreeFile()
 	}
+}
+
+func (d defaultManager) LoadAndSaveTreeFile() {
+	log.Println("Starting create tree file.")
+	treeManager := tree.NewDefaultManager(d.homePath, d.serverURL, d.httpClient, d.session)
+	err := treeManager.LoadAndSaveTree()
+	if err != nil {
+		log.Fatalln("Error to create tree file!")
+	}
+	log.Println("Finished create tree file.")
 }
 
 func stopServer() {
