@@ -51,6 +51,9 @@ func (d *defaultManager) Handle(shellName string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	if tree == nil {
+		return "", nil
+	}
 	autoCompletion := ""
 	switch shellName {
 	case bash:
