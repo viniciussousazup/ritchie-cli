@@ -115,7 +115,7 @@ func (d *defaultManager) inputs(cmd *exec.Cmd, formulaPath string, config *Confi
 		}
 
 		if err != nil {
-			return nil
+			return err
 		}
 
 		if inputval != "" {
