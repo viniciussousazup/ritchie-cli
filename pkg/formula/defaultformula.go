@@ -2,6 +2,7 @@ package formula
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -9,7 +10,6 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"runtime"
 	"strconv"
 	"strings"
 
@@ -36,24 +36,28 @@ func (d *defaultManager) Run(def Definition) error {
 	formulaPath := def.FormulaPath(d.ritchieHome)
 
 	var config *Config
-	configFile := def.ConfigPath(formulaPath)
-	if fileutil.Exists(configFile) {
-		configFile, err := ioutil.ReadFile(configFile)
-		if err != nil {
-			return err
-		}
-		config = &Config{}
-		err = json.Unmarshal(configFile, config)
-		if err != nil {
+	configName := def.ConfigName()
+	configPath := def.ConfigPath(formulaPath, configName)
+	if !fileutil.Exists(configPath) {
+		if err := d.downloadConfig(def.ConfigUrl(configName), formulaPath, configName); err != nil {
 			return err
 		}
 	}
+	configFile, err := ioutil.ReadFile(configPath)
+	if err != nil {
+		return err
+	}
+	config = &Config{}
+	err = json.Unmarshal(configFile, config)
+	if err != nil {
+		return err
+	}
 
-	so := runtime.GOOS
-	var bin string
-	binPath := def.BinPath(formulaPath, so)
-	if !fileutil.Exists(binPath) {
-		zipFile, err := d.downloadFormula(def.RepoUrl, binPath)
+	binName := def.BinName()
+	binPath := def.BinPath(formulaPath)
+	binFilePath := def.BinFilePath(binPath, binName)
+	if !fileutil.Exists(binFilePath) {
+		zipFile, err := d.downloadFormulaBin(def.BinUrl(), binPath, binName)
 		if err != nil {
 			return err
 		}
@@ -64,59 +68,14 @@ func (d *defaultManager) Run(def Definition) error {
 		}
 	}
 
-	cmd := exec.Command(bin)
+	cmd := exec.Command(binFilePath)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	if config != nil {
-		for i, input := range config.Inputs {
-			var err error
-			var inputval string
-			var valbool bool
-			items, err := d.loadItems(input, formulaPath)
-			if err != nil {
-				return err
-			}
-			switch itype := input.Type; itype {
-			case "text":
-				if items != nil {
-					inputval, err = d.loadInputValList(items, input, formulaPath)
-				} else {
-					validate := input.Default == ""
-					inputval, err = prompt.String(input.Label, validate)
-					if inputval == "" {
-						inputval = input.Default
-					}
-				}
-			case "bool":
-				valbool, err = prompt.ListBool(input.Label, items)
-				inputval = strconv.FormatBool(valbool)
-			default:
-				inputval, err = d.resolveIfReserved(input)
-				if err != nil {
-					log.Fatalf("Fail to resolve input: %v, verify your credentials. [try using set credential]", input.Type)
-				}
-			}
-
-			if err != nil {
-				return err
-			}
-
-			if inputval != "" {
-				d.persistCache(formulaPath, inputval, input, items)
-				env := fmt.Sprintf(EnvPattern, strings.ToUpper(input.Name), inputval)
-				if i == 0 {
-					cmd.Env = append(os.Environ(), env)
-				} else {
-					cmd.Env = append(cmd.Env, env)
-				}
-			}
-		}
-		if config.Command != "" {
-			command := fmt.Sprintf(EnvPattern, CommandEnv, config.Command)
-			cmd.Env = append(cmd.Env, command)
-		}
+	err = d.inputs(cmd, formulaPath, config)
+	if err != nil {
+		return err
 	}
 
 	if err := cmd.Start(); err != nil {
@@ -129,6 +88,57 @@ func (d *defaultManager) Run(def Definition) error {
 	}
 	fmt.Println(string(out))
 
+	return nil
+}
+
+func (d *defaultManager) inputs(cmd *exec.Cmd, formulaPath string, config *Config) error {
+	for i, input := range config.Inputs {
+		var err error
+		var inputval string
+		var valbool bool
+		items, err := d.loadItems(input, formulaPath)
+		if err != nil {
+			return err
+		}
+		switch itype := input.Type; itype {
+		case "text":
+			if items != nil {
+				inputval, err = d.loadInputValList(items, input, formulaPath)
+			} else {
+				validate := input.Default == ""
+				inputval, err = prompt.String(input.Label, validate)
+				if inputval == "" {
+					inputval = input.Default
+				}
+			}
+		case "bool":
+			valbool, err = prompt.ListBool(input.Label, items)
+			inputval = strconv.FormatBool(valbool)
+		default:
+			inputval, err = d.resolveIfReserved(input)
+			if err != nil {
+				log.Fatalf("Fail to resolve input: %v, verify your credentials. [try using set credential]", input.Type)
+			}
+		}
+
+		if err != nil {
+			return nil
+		}
+
+		if inputval != "" {
+			d.persistCache(formulaPath, inputval, input, items)
+			env := fmt.Sprintf(EnvPattern, strings.ToUpper(input.Name), inputval)
+			if i == 0 {
+				cmd.Env = append(os.Environ(), env)
+			} else {
+				cmd.Env = append(cmd.Env, env)
+			}
+		}
+	}
+	if config.Command != "" {
+		command := fmt.Sprintf(EnvPattern, CommandEnv, config.Command)
+		cmd.Env = append(cmd.Env, command)
+	}
 	return nil
 }
 
@@ -216,20 +226,26 @@ func (d *defaultManager) resolveIfReserved(input Input) (string, error) {
 	return "", nil
 }
 
-func (d *defaultManager) downloadFormula(url string, destPath string) (string, error) {
-	log.Println("Starting download zip file.")
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return "", err
-	}
 
-	resp, err := http.DefaultClient.Do(req)
+func (d *defaultManager) downloadFormulaBin(url, destPath, binName string) (string, error) {
+	log.Println("Starting download zip file.")
+
+	resp, err := http.Get(url)
 	if err != nil {
 		return "", err
 	}
 	defer resp.Body.Close()
 
-	file := fmt.Sprintf("%s.zip", destPath)
+	if resp.StatusCode != http.StatusOK {
+		return "", errors.New("unknown error")
+	}
+
+	file := fmt.Sprintf("%s/%s.zip", destPath, binName)
+
+	err = fileutil.CreateIfNotExists(destPath, 0755)
+	if err != nil {
+		return "", err
+	}
 	out, err := os.Create(file)
 	if err != nil {
 		return "", err
@@ -243,6 +259,40 @@ func (d *defaultManager) downloadFormula(url string, destPath string) (string, e
 	return file, nil
 }
 
+func (d *defaultManager) downloadConfig(url, destPath, configName string) error {
+	log.Println("Starting download config file.")
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return errors.New("unknown error")
+	}
+
+	file := fmt.Sprintf("%s/%s", destPath, configName)
+
+	err = fileutil.CreateIfNotExists(destPath, 0755)
+	if err != nil {
+		return err
+	}
+
+	out, err := os.Create(file)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+	_, err = io.Copy(out, resp.Body)
+	if err != nil {
+		return err
+	}
+	log.Println("Download zip file done.")
+	return nil
+}
+
+>>>>>>> Stashed changes
 func (d *defaultManager) unzipFile(filename, destPath string) error {
 	log.Println("Unzip files S3...")
 

@@ -2,6 +2,7 @@ package formula
 
 import (
 	"fmt"
+	"runtime"
 	"strings"
 )
 
@@ -26,8 +27,9 @@ const (
 	CommandEnv = "COMMAND"
 
 	// BinPattern path of formula bin file on local machine
-	BinPattern = "%s/bin/%s%s"
-	windows    = "windows"
+	BinPattern     = "%s%s"
+	BinPathPattern = "%s/bin"
+	windows        = "windows"
 
 	// EnvPattern pattern to build envs
 	EnvPattern = "%s=%s"
@@ -76,22 +78,44 @@ func (d *Definition) FormulaPath(home string) string {
 	return fmt.Sprintf(PathPattern, home, d.Path)
 }
 
-// BinPath builds the bin path from formula path
-func (d *Definition) BinPath(formula string, so string) string {
+func (d *Definition) BinName() string {
+	so := runtime.GOOS
 	suffix := ""
 	if so == windows {
 		suffix = ".exe"
 	}
 	binSO := strings.ReplaceAll(d.Bin, "${so}", so)
-	return fmt.Sprintf(BinPattern, formula, binSO, suffix)
+
+	return fmt.Sprintf(BinPattern, binSO, suffix)
+}
+
+// BinPath builds the bin path from formula path
+func (d *Definition) BinPath(formula string) string {
+	return fmt.Sprintf(BinPathPattern, formula)
+}
+
+func (d *Definition) BinFilePath(binPath, binName string) string {
+	return fmt.Sprintf("%s/%s", binPath, binName)
+}
+
+func (d *Definition) BinUrl() string {
+	return fmt.Sprintf("%s/bin/%s.zip", d.RepoUrl, d.BinName())
+}
+
+func (d *Definition) ConfigName() string {
+	if d.Config != "" {
+		return d.Config
+	}
+	return DefaultConfig
 }
 
 // ConfigPath builds the config path from formula path
-func (d *Definition) ConfigPath(formula string) string {
-	if d.Config != "" {
-		return fmt.Sprintf(ConfigPattern, formula, d.Config)
-	}
-	return fmt.Sprintf(ConfigPattern, formula, DefaultConfig)
+func (d *Definition) ConfigPath(formula, configName string) string {
+	return fmt.Sprintf(ConfigPattern, formula, configName)
+}
+
+func (d *Definition) ConfigUrl(configName string) string {
+	return fmt.Sprintf("%s/%s", d.RepoUrl, configName)
 }
 
 //go:generate $GOPATH/bin/moq -out mock_formulamanager.go . Manager
