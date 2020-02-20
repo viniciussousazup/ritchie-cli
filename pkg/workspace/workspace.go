@@ -6,6 +6,4 @@ package workspace
 type Manager interface {
 	// WorkingDir checks workspace setup
 	CheckWorkingDir() error
-	// InitWorkingDir creates working dir
-	InitWorkingDir() error
 }

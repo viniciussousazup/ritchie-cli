@@ -9,7 +9,6 @@ import (
 
 var (
 	lockManagerMockCheckWorkingDir sync.RWMutex
-	lockManagerMockInitWorkingDir  sync.RWMutex
 )
 
 // Ensure, that ManagerMock does implement Manager.
@@ -25,9 +24,6 @@ var _ Manager = &ManagerMock{}
 //             CheckWorkingDirFunc: func() error {
 // 	               panic("mock out the CheckWorkingDir method")
 //             },
-//             InitWorkingDirFunc: func() error {
-// 	               panic("mock out the InitWorkingDir method")
-//             },
 //         }
 //
 //         // use mockedManager in code that requires Manager
@@ -38,16 +34,10 @@ type ManagerMock struct {
 	// CheckWorkingDirFunc mocks the CheckWorkingDir method.
 	CheckWorkingDirFunc func() error
 
-	// InitWorkingDirFunc mocks the InitWorkingDir method.
-	InitWorkingDirFunc func() error
-
 	// calls tracks calls to the methods.
 	calls struct {
 		// CheckWorkingDir holds details about calls to the CheckWorkingDir method.
 		CheckWorkingDir []struct {
-		}
-		// InitWorkingDir holds details about calls to the InitWorkingDir method.
-		InitWorkingDir []struct {
 		}
 	}
 }
@@ -75,31 +65,5 @@ func (mock *ManagerMock) CheckWorkingDirCalls() []struct {
 	lockManagerMockCheckWorkingDir.RLock()
 	calls = mock.calls.CheckWorkingDir
 	lockManagerMockCheckWorkingDir.RUnlock()
-	return calls
-}
-
-// InitWorkingDir calls InitWorkingDirFunc.
-func (mock *ManagerMock) InitWorkingDir() error {
-	if mock.InitWorkingDirFunc == nil {
-		panic("ManagerMock.InitWorkingDirFunc: method is nil but Manager.InitWorkingDir was just called")
-	}
-	callInfo := struct {
-	}{}
-	lockManagerMockInitWorkingDir.Lock()
-	mock.calls.InitWorkingDir = append(mock.calls.InitWorkingDir, callInfo)
-	lockManagerMockInitWorkingDir.Unlock()
-	return mock.InitWorkingDirFunc()
-}
-
-// InitWorkingDirCalls gets all the calls that were made to InitWorkingDir.
-// Check the length with:
-//     len(mockedManager.InitWorkingDirCalls())
-func (mock *ManagerMock) InitWorkingDirCalls() []struct {
-} {
-	var calls []struct {
-	}
-	lockManagerMockInitWorkingDir.RLock()
-	calls = mock.calls.InitWorkingDir
-	lockManagerMockInitWorkingDir.RUnlock()
 	return calls
 }

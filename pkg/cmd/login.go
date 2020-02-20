@@ -15,8 +15,8 @@ type loginCmd struct {
 }
 
 // NewLoginCmd creates new cmd instance
-func NewLoginCmd(loginManager login.Manager) *cobra.Command {
-	o := &loginCmd{loginManager}
+func NewLoginCmd(l login.Manager) *cobra.Command {
+	o := &loginCmd{l}
 	return &cobra.Command{
 		Use:   "login",
 		Short: "User login",
@@ -32,9 +32,9 @@ func (o *loginCmd) prompt() error {
 	if err != nil {
 		return err
 	}
+
 	log.Println("Starting login...")
-	err = o.loginManager.Authenticate(org, Version)
-	if err != nil {
+	if err := o.loginManager.Authenticate(org, Version); err != nil {
 		return err
 	}
 	return nil
