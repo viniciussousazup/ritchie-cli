@@ -55,7 +55,7 @@ func main() {
 	credResolver := envcredential.NewResolver(credManager)
 	envResolvers := make(env.Resolvers)
 	envResolvers[env.Credential] = credResolver
-	formulaManager := formula.NewDefaultManager(ritchieHomePath, envResolvers)
+	formulaManager := formula.NewDefaultManager(ritchieHomePath, envResolvers, http.DefaultClient)
 
 	// cmd tree
 	treeBuilder := cmd.NewTreeBuilder(treeManager, workspaceManager, credManager, formulaManager, loginManager, userManager, autocompleteManager, ctxManager)

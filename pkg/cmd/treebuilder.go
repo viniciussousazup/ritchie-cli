@@ -116,6 +116,7 @@ func (b *treeBuilder) processTree(treeCmd *tree.Representation, rootCmd *cobra.C
 				annotations["formulaPath"] = f.Path
 				annotations["formulaBin"] = f.Bin
 				annotations["formulaConfig"] = f.Config
+				annotations["formulaRepoUrl"] = f.RepoUrl
 				cmd = &cobra.Command{
 					Use:   v.Usage,
 					Short: v.Help,
@@ -126,12 +127,17 @@ func (b *treeBuilder) processTree(treeCmd *tree.Representation, rootCmd *cobra.C
 							fPath := cmd.Annotations["formulaPath"]
 							fBin := cmd.Annotations["formulaBin"]
 							fConf := cmd.Annotations["formulaConfig"]
+							fRepoUrl := cmd.Annotations["formulaRepoUrl"]
 							frm := formula.Definition{
-								Path:   fPath,
-								Bin:    fBin,
-								Config: fConf,
+								Path:    fPath,
+								Bin:     fBin,
+								Config:  fConf,
+								RepoUrl: fRepoUrl,
 							}
-							b.formulaManager.Run(frm)
+							err := b.formulaManager.Run(frm)
+							if err != nil {
+								return err
+							}
 						}
 						return nil
 					},

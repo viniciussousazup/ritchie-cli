@@ -3,8 +3,10 @@ package formula
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"os/exec"
 	"runtime"
@@ -21,11 +23,12 @@ import (
 type defaultManager struct {
 	ritchieHome  string
 	envResolvers env.Resolvers
+	client       *http.Client
 }
 
 // NewDefaultManager creates a default instance of Manager interface
-func NewDefaultManager(ritchieHome string, ee env.Resolvers) *defaultManager {
-	return &defaultManager{ritchieHome: ritchieHome, envResolvers: ee}
+func NewDefaultManager(ritchieHome string, ee env.Resolvers, c *http.Client) *defaultManager {
+	return &defaultManager{ritchieHome: ritchieHome, envResolvers: ee, client: c}
 }
 
 // Run default implementation of function Manager.Run
@@ -47,7 +50,20 @@ func (d *defaultManager) Run(def Definition) error {
 	}
 
 	so := runtime.GOOS
-	bin := def.BinPath(formulaPath, so)
+	var bin string
+	binPath := def.BinPath(formulaPath, so)
+	if !fileutil.Exists(binPath) {
+		zipFile, err := d.downloadFormula(def.RepoUrl, binPath)
+		if err != nil {
+			return err
+		}
+
+		err = d.unzipFile(zipFile, binPath)
+		if err != nil {
+			return err
+		}
+	}
+
 	cmd := exec.Command(bin)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
@@ -107,7 +123,7 @@ func (d *defaultManager) Run(def Definition) error {
 		return err
 	}
 	cmd.Wait()
-	out, err := cmd.Output()
+	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return err
 	}
@@ -198,4 +214,47 @@ func (d *defaultManager) resolveIfReserved(input Input) (string, error) {
 		return resolver.Resolve(input.Type)
 	}
 	return "", nil
+}
+
+func (d *defaultManager) downloadFormula(url string, destPath string) (string, error) {
+	log.Println("Starting download zip file.")
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return "", err
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	file := fmt.Sprintf("%s.zip", destPath)
+	out, err := os.Create(file)
+	if err != nil {
+		return "", err
+	}
+	defer out.Close()
+	_, err = io.Copy(out, resp.Body)
+	if err != nil {
+		return "", err
+	}
+	log.Println("Download zip file done.")
+	return file, nil
+}
+
+func (d *defaultManager) unzipFile(filename, destPath string) error {
+	log.Println("Unzip files S3...")
+
+	_ = fileutil.CreateIfNotExists(destPath, 0655)
+	err := fileutil.Unzip(filename, destPath)
+	if err != nil {
+		return err
+	}
+	err = fileutil.RemoveFile(filename)
+	if err != nil {
+		return err
+	}
+	log.Println("Unzip S3 done.")
+	return nil
 }
