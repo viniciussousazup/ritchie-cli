@@ -33,60 +33,53 @@ func NewDefaultManager(ritchieHome string, ee env.Resolvers, c *http.Client) *de
 
 // Run default implementation of function Manager.Run
 func (d *defaultManager) Run(def Definition) error {
-	formulaPath := def.FormulaPath(d.ritchieHome)
+	fPath := def.FormulaPath(d.ritchieHome)
 
 	var config *Config
-	configName := def.ConfigName()
-	configPath := def.ConfigPath(formulaPath, configName)
-	if !fileutil.Exists(configPath) {
-		if err := d.downloadConfig(def.ConfigUrl(configName), formulaPath, configName); err != nil {
+	cName := def.ConfigName()
+	cPath := def.ConfigPath(fPath, cName)
+	if !fileutil.Exists(cPath) {
+		if err := d.downloadConfig(def.ConfigUrl(cName), fPath, cName); err != nil {
 			return err
 		}
 	}
-	configFile, err := ioutil.ReadFile(configPath)
+	configFile, err := ioutil.ReadFile(cPath)
 	if err != nil {
 		return err
 	}
 	config = &Config{}
-	err = json.Unmarshal(configFile, config)
-	if err != nil {
+	if err := json.Unmarshal(configFile, config); err != nil {
 		return err
 	}
 
-	binName := def.BinName()
-	binPath := def.BinPath(formulaPath)
-	binFilePath := def.BinFilePath(binPath, binName)
-	if !fileutil.Exists(binFilePath) {
-		zipFile, err := d.downloadFormulaBin(def.BinUrl(), binPath, binName)
+	bName := def.BinName()
+	bPath := def.BinPath(fPath)
+	bFilePath := def.BinFilePath(bPath, bName)
+	if !fileutil.Exists(bFilePath) {
+		zipFile, err := d.downloadFormulaBin(def.BinUrl(), bPath, bName)
 		if err != nil {
 			return err
 		}
 
-		err = d.unzipFile(zipFile, binPath)
-		if err != nil {
+		if err := d.unzipFile(zipFile, bPath); err != nil {
 			return err
 		}
 	}
 
-	cmd := exec.Command(binFilePath)
+	cmd := exec.Command(bFilePath)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	err = d.inputs(cmd, formulaPath, config)
-	if err != nil {
+	if err := d.inputs(cmd, fPath, config); err != nil {
 		return err
 	}
-
 	if err := cmd.Start(); err != nil {
 		return err
 	}
-	cmd.Wait()
-	out, err := cmd.CombinedOutput()
-	if err != nil {
+	if err := cmd.Wait(); err != nil {
 		return err
 	}
-	fmt.Println(string(out))
 
 	return nil
 }
@@ -103,7 +96,7 @@ func (d *defaultManager) inputs(cmd *exec.Cmd, formulaPath string, config *Confi
 		switch itype := input.Type; itype {
 		case "text":
 			if items != nil {
-				inputval, err = d.loadInputValList(items, input, formulaPath)
+				inputval, err = d.loadInputValList(items, input)
 			} else {
 				validate := input.Default == ""
 				inputval, err = prompt.String(input.Label, validate)
@@ -127,11 +120,11 @@ func (d *defaultManager) inputs(cmd *exec.Cmd, formulaPath string, config *Confi
 
 		if inputval != "" {
 			d.persistCache(formulaPath, inputval, input, items)
-			env := fmt.Sprintf(EnvPattern, strings.ToUpper(input.Name), inputval)
+			e := fmt.Sprintf(EnvPattern, strings.ToUpper(input.Name), inputval)
 			if i == 0 {
-				cmd.Env = append(os.Environ(), env)
+				cmd.Env = append(os.Environ(), e)
 			} else {
-				cmd.Env = append(cmd.Env, env)
+				cmd.Env = append(cmd.Env, e)
 			}
 		}
 	}
@@ -168,7 +161,7 @@ func (d *defaultManager) persistCache(formulaPath, inputVal string, input Input,
 	}
 }
 
-func (d *defaultManager) loadInputValList(items []string, input Input, formulaPath string) (string, error) {
+func (d *defaultManager) loadInputValList(items []string, input Input) (string, error) {
 	newLabel := DefaultCacheNewLabel
 	if input.Cache.Active {
 		if input.Cache.NewLabel != "" {
@@ -226,9 +219,8 @@ func (d *defaultManager) resolveIfReserved(input Input) (string, error) {
 	return "", nil
 }
 
-
 func (d *defaultManager) downloadFormulaBin(url, destPath, binName string) (string, error) {
-	log.Println("Starting download zip file.")
+	log.Println("Starting download formula...")
 
 	resp, err := http.Get(url)
 	if err != nil {
@@ -237,13 +229,21 @@ func (d *defaultManager) downloadFormulaBin(url, destPath, binName string) (stri
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return "", errors.New("unknown error")
+		return "", errors.New("the formula bin not found")
+	}
+
+	switch resp.StatusCode {
+	case http.StatusOK:
+		break
+	case http.StatusNotFound:
+		return "", errors.New("the formula bin not found")
+	default:
+		return "", errors.New("unknown error when downloading your formula")
 	}
 
 	file := fmt.Sprintf("%s/%s.zip", destPath, binName)
 
-	err = fileutil.CreateIfNotExists(destPath, 0755)
-	if err != nil {
+	if err := fileutil.CreateIfNotExists(destPath, 0755); err != nil {
 		return "", err
 	}
 	out, err := os.Create(file)
@@ -251,16 +251,16 @@ func (d *defaultManager) downloadFormulaBin(url, destPath, binName string) (stri
 		return "", err
 	}
 	defer out.Close()
-	_, err = io.Copy(out, resp.Body)
-	if err != nil {
+	if _, err = io.Copy(out, resp.Body); err != nil {
 		return "", err
 	}
-	log.Println("Download zip file done.")
+
+	log.Println("Download formula done.")
 	return file, nil
 }
 
 func (d *defaultManager) downloadConfig(url, destPath, configName string) error {
-	log.Println("Starting download config file.")
+	log.Println("Starting download config file...")
 
 	resp, err := http.Get(url)
 	if err != nil {
@@ -268,14 +268,18 @@ func (d *defaultManager) downloadConfig(url, destPath, configName string) error 
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return errors.New("unknown error")
+	switch resp.StatusCode {
+	case http.StatusOK:
+		break
+	case http.StatusNotFound:
+		return errors.New("the config file not found")
+	default:
+		return errors.New("unknown error when downloading your config file")
 	}
 
 	file := fmt.Sprintf("%s/%s", destPath, configName)
 
-	err = fileutil.CreateIfNotExists(destPath, 0755)
-	if err != nil {
+	if err := fileutil.CreateIfNotExists(destPath, 0755); err != nil {
 		return err
 	}
 
@@ -284,27 +288,28 @@ func (d *defaultManager) downloadConfig(url, destPath, configName string) error 
 		return err
 	}
 	defer out.Close()
-	_, err = io.Copy(out, resp.Body)
-	if err != nil {
+
+	if _, err := io.Copy(out, resp.Body); err != nil {
 		return err
 	}
-	log.Println("Download zip file done.")
+
+	log.Println("Download config file done.")
 	return nil
 }
 
->>>>>>> Stashed changes
 func (d *defaultManager) unzipFile(filename, destPath string) error {
-	log.Println("Unzip files S3...")
+	log.Println("Installing the formula...")
 
-	_ = fileutil.CreateIfNotExists(destPath, 0655)
-	err := fileutil.Unzip(filename, destPath)
-	if err != nil {
+	if err := fileutil.CreateIfNotExists(destPath, 0655); err != nil {
 		return err
 	}
-	err = fileutil.RemoveFile(filename)
-	if err != nil {
+	if err := fileutil.Unzip(filename, destPath); err != nil {
 		return err
 	}
-	log.Println("Unzip S3 done.")
+	if err := fileutil.RemoveFile(filename); err != nil {
+		return err
+	}
+
+	log.Println("Formula installation done.")
 	return nil
 }
