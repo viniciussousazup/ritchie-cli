@@ -2,12 +2,14 @@ package formula
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"os/exec"
-	"runtime"
 	"strconv"
 	"strings"
 
@@ -21,98 +23,115 @@ import (
 type defaultManager struct {
 	ritchieHome  string
 	envResolvers env.Resolvers
+	client       *http.Client
 }
 
 // NewDefaultManager creates a default instance of Manager interface
-func NewDefaultManager(ritchieHome string, ee env.Resolvers) *defaultManager {
-	return &defaultManager{ritchieHome: ritchieHome, envResolvers: ee}
+func NewDefaultManager(ritchieHome string, ee env.Resolvers, c *http.Client) *defaultManager {
+	return &defaultManager{ritchieHome: ritchieHome, envResolvers: ee, client: c}
 }
 
 // Run default implementation of function Manager.Run
 func (d *defaultManager) Run(def Definition) error {
-	formulaPath := def.FormulaPath(d.ritchieHome)
+	fPath := def.FormulaPath(d.ritchieHome)
 
 	var config *Config
-	configFile := def.ConfigPath(formulaPath)
-	if fileutil.Exists(configFile) {
-		configFile, err := ioutil.ReadFile(configFile)
+	cName := def.ConfigName()
+	cPath := def.ConfigPath(fPath, cName)
+	if !fileutil.Exists(cPath) {
+		if err := d.downloadConfig(def.ConfigUrl(cName), fPath, cName); err != nil {
+			return err
+		}
+	}
+	configFile, err := ioutil.ReadFile(cPath)
+	if err != nil {
+		return err
+	}
+	config = &Config{}
+	if err := json.Unmarshal(configFile, config); err != nil {
+		return err
+	}
+
+	bName := def.BinName()
+	bPath := def.BinPath(fPath)
+	bFilePath := def.BinFilePath(bPath, bName)
+	if !fileutil.Exists(bFilePath) {
+		zipFile, err := d.downloadFormulaBin(def.BinUrl(), bPath, bName)
 		if err != nil {
 			return err
 		}
-		config = &Config{}
-		err = json.Unmarshal(configFile, config)
-		if err != nil {
+
+		if err := d.unzipFile(zipFile, bPath); err != nil {
 			return err
 		}
 	}
 
-	so := runtime.GOOS
-	bin := def.BinPath(formulaPath, so)
-	cmd := exec.Command(bin)
+	cmd := exec.Command(bFilePath)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	if config != nil {
-		for i, input := range config.Inputs {
-			var err error
-			var inputval string
-			var valbool bool
-			items, err := d.loadItems(input, formulaPath)
-			if err != nil {
-				return err
-			}
-			switch itype := input.Type; itype {
-			case "text":
-				if items != nil {
-					inputval, err = d.loadInputValList(items, input, formulaPath)
-				} else {
-					validate := input.Default == ""
-					inputval, err = prompt.String(input.Label, validate)
-					if inputval == "" {
-						inputval = input.Default
-					}
-				}
-			case "bool":
-				valbool, err = prompt.ListBool(input.Label, items)
-				inputval = strconv.FormatBool(valbool)
-			default:
-				inputval, err = d.resolveIfReserved(input)
-				if err != nil {
-					log.Fatalf("Fail to resolve input: %v, verify your credentials. [try using set credential]", input.Type)
-				}
-			}
-
-			if err != nil {
-				return err
-			}
-
-			if inputval != "" {
-				d.persistCache(formulaPath, inputval, input, items)
-				env := fmt.Sprintf(EnvPattern, strings.ToUpper(input.Name), inputval)
-				if i == 0 {
-					cmd.Env = append(os.Environ(), env)
-				} else {
-					cmd.Env = append(cmd.Env, env)
-				}
-			}
-		}
-		if config.Command != "" {
-			command := fmt.Sprintf(EnvPattern, CommandEnv, config.Command)
-			cmd.Env = append(cmd.Env, command)
-		}
+	if err := d.inputs(cmd, fPath, config); err != nil {
+		return err
 	}
-
 	if err := cmd.Start(); err != nil {
 		return err
 	}
-	cmd.Wait()
-	out, err := cmd.Output()
-	if err != nil {
+	if err := cmd.Wait(); err != nil {
 		return err
 	}
-	fmt.Println(string(out))
 
+	return nil
+}
+
+func (d *defaultManager) inputs(cmd *exec.Cmd, formulaPath string, config *Config) error {
+	for i, input := range config.Inputs {
+		var err error
+		var inputval string
+		var valbool bool
+		items, err := d.loadItems(input, formulaPath)
+		if err != nil {
+			return err
+		}
+		switch itype := input.Type; itype {
+		case "text":
+			if items != nil {
+				inputval, err = d.loadInputValList(items, input)
+			} else {
+				validate := input.Default == ""
+				inputval, err = prompt.String(input.Label, validate)
+				if inputval == "" {
+					inputval = input.Default
+				}
+			}
+		case "bool":
+			valbool, err = prompt.ListBool(input.Label, items)
+			inputval = strconv.FormatBool(valbool)
+		default:
+			inputval, err = d.resolveIfReserved(input)
+			if err != nil {
+				log.Fatalf("Fail to resolve input: %v, verify your credentials. [try using set credential]", input.Type)
+			}
+		}
+
+		if err != nil {
+			return err
+		}
+
+		if inputval != "" {
+			d.persistCache(formulaPath, inputval, input, items)
+			e := fmt.Sprintf(EnvPattern, strings.ToUpper(input.Name), inputval)
+			if i == 0 {
+				cmd.Env = append(os.Environ(), e)
+			} else {
+				cmd.Env = append(cmd.Env, e)
+			}
+		}
+	}
+	if config.Command != "" {
+		command := fmt.Sprintf(EnvPattern, CommandEnv, config.Command)
+		cmd.Env = append(cmd.Env, command)
+	}
 	return nil
 }
 
@@ -142,7 +161,7 @@ func (d *defaultManager) persistCache(formulaPath, inputVal string, input Input,
 	}
 }
 
-func (d *defaultManager) loadInputValList(items []string, input Input, formulaPath string) (string, error) {
+func (d *defaultManager) loadInputValList(items []string, input Input) (string, error) {
 	newLabel := DefaultCacheNewLabel
 	if input.Cache.Active {
 		if input.Cache.NewLabel != "" {
@@ -198,4 +217,99 @@ func (d *defaultManager) resolveIfReserved(input Input) (string, error) {
 		return resolver.Resolve(input.Type)
 	}
 	return "", nil
+}
+
+func (d *defaultManager) downloadFormulaBin(url, destPath, binName string) (string, error) {
+	log.Println("Starting download formula...")
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", errors.New("the formula bin not found")
+	}
+
+	switch resp.StatusCode {
+	case http.StatusOK:
+		break
+	case http.StatusNotFound:
+		return "", errors.New("the formula bin not found")
+	default:
+		return "", errors.New("unknown error when downloading your formula")
+	}
+
+	file := fmt.Sprintf("%s/%s.zip", destPath, binName)
+
+	if err := fileutil.CreateIfNotExists(destPath, 0755); err != nil {
+		return "", err
+	}
+	out, err := os.Create(file)
+	if err != nil {
+		return "", err
+	}
+	defer out.Close()
+	if _, err = io.Copy(out, resp.Body); err != nil {
+		return "", err
+	}
+
+	log.Println("Download formula done.")
+	return file, nil
+}
+
+func (d *defaultManager) downloadConfig(url, destPath, configName string) error {
+	log.Println("Starting download config file...")
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	switch resp.StatusCode {
+	case http.StatusOK:
+		break
+	case http.StatusNotFound:
+		return errors.New("the config file not found")
+	default:
+		return errors.New("unknown error when downloading your config file")
+	}
+
+	file := fmt.Sprintf("%s/%s", destPath, configName)
+
+	if err := fileutil.CreateIfNotExists(destPath, 0755); err != nil {
+		return err
+	}
+
+	out, err := os.Create(file)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	if _, err := io.Copy(out, resp.Body); err != nil {
+		return err
+	}
+
+	log.Println("Download config file done.")
+	return nil
+}
+
+func (d *defaultManager) unzipFile(filename, destPath string) error {
+	log.Println("Installing the formula...")
+
+	if err := fileutil.CreateIfNotExists(destPath, 0655); err != nil {
+		return err
+	}
+	if err := fileutil.Unzip(filename, destPath); err != nil {
+		return err
+	}
+	if err := fileutil.RemoveFile(filename); err != nil {
+		return err
+	}
+
+	log.Println("Formula installation done.")
+	return nil
 }

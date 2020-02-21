@@ -17,7 +17,6 @@ import (
 	"github.com/ZupIT/ritchie-cli/pkg/env"
 	"github.com/ZupIT/ritchie-cli/pkg/env/envcredential"
 	"github.com/ZupIT/ritchie-cli/pkg/formula"
-	"github.com/ZupIT/ritchie-cli/pkg/git"
 	"github.com/ZupIT/ritchie-cli/pkg/login"
 	"github.com/ZupIT/ritchie-cli/pkg/metrics"
 	"github.com/ZupIT/ritchie-cli/pkg/tree"
@@ -42,20 +41,19 @@ func main() {
 	ritchieHomePath := fmt.Sprintf(ritchieHomePattern, usr.HomeDir)
 
 	// deps
-	gitManager := git.NewDefaultManager()
 	sessionManager := session.NewDefaultManager(ritchieHomePath)
 	treeManager := tree.NewDefaultManager(ritchieHomePath, env.ServerUrl, http.DefaultClient, sessionManager)
 	loginManager := login.NewDefaultManager(ritchieHomePath, env.ServerUrl, http.DefaultClient, sessionManager, treeManager)
 	credManager := credential.NewDefaultManager(env.ServerUrl, http.DefaultClient, sessionManager)
 	userManager := ruser.NewDefaultManager(env.ServerUrl, http.DefaultClient, sessionManager)
-	workspaceManager := workspace.NewDefaultManager(ritchieHomePath, env.ServerUrl, http.DefaultClient, treeManager, gitManager, credManager, sessionManager)
+	workspaceManager := workspace.NewDefaultManager(ritchieHomePath, treeManager)
 	autocompleteManager := autocomplete.NewDefaultManager(env.ServerUrl, ritchieHomePath, http.DefaultClient)
 	ctxManager := context.NewDefaultManager(sessionManager)
 	metricsManager := metrics.NewDefaultManager(env.ServerUrl, &http.Client{Timeout: 2 * time.Second}, sessionManager)
 	credResolver := envcredential.NewResolver(credManager)
 	envResolvers := make(env.Resolvers)
 	envResolvers[env.Credential] = credResolver
-	formulaManager := formula.NewDefaultManager(ritchieHomePath, envResolvers)
+	formulaManager := formula.NewDefaultManager(ritchieHomePath, envResolvers, http.DefaultClient)
 
 	// cmd tree
 	treeBuilder := cmd.NewTreeBuilder(treeManager, workspaceManager, credManager, formulaManager, loginManager, userManager, autocompleteManager, ctxManager)

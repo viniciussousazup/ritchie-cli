@@ -25,9 +25,6 @@ func TestBuildTree(t *testing.T) {
 		CheckWorkingDirFunc: func() error {
 			return nil
 		},
-		InitWorkingDirFunc: func() error {
-			return nil
-		},
 	}
 
 	credman := &credential.ManagerMock{
@@ -46,7 +43,7 @@ func TestBuildTree(t *testing.T) {
 	}
 
 	logman := &login.ManagerMock{
-		AuthenticateFunc: func(organization,version string) error {
+		AuthenticateFunc: func(organization, version string) error {
 			return nil
 		},
 	}

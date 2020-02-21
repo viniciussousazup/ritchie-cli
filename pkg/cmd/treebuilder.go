@@ -20,10 +20,10 @@ import (
 
 var (
 	coreCmds = []string{
-		"root_init", "root_set", "root_set_credential", "root_set_context",
-		"root_create", "root_create_user", "root_delete", "root_delete_user",
-		"root_delete_context", "root_show", "root_show_context", "root_help",
-		"root_login", "root_completion", "root_completion_zsh", "root_completion_bash"}
+		"root_set", "root_set_credential", "root_set_context", "root_create",
+		"root_create_user", "root_delete", "root_delete_user", "root_delete_context",
+		"root_show", "root_show_context", "root_help", "root_login", "root_completion",
+		"root_completion_zsh", "root_completion_bash"}
 )
 
 // treeBuilder type that represents the tree builder
@@ -64,7 +64,6 @@ func NewTreeBuilder(
 // BuildTree builds the tree of the commands
 func (b *treeBuilder) BuildTree() (*cobra.Command, error) {
 	rootCmd := NewRootCmd(b.workspaceManager)
-	initCmd := NewInitCmd(b.workspaceManager)
 	setCmd := NewSetCmd()
 	showCmd := NewShowCmd()
 	createCmd := NewCreateCmd()
@@ -88,7 +87,7 @@ func (b *treeBuilder) BuildTree() (*cobra.Command, error) {
 	deleteCmd.AddCommand(deleteCtxCmd)
 	showCmd.AddCommand(showCtxCmd)
 
-	rootCmd.AddCommand(initCmd, setCmd, createCmd, deleteCmd, loginCmd, autocompleteCmd, showCmd)
+	rootCmd.AddCommand(setCmd, createCmd, deleteCmd, loginCmd, autocompleteCmd, showCmd)
 
 	treeCmd, err := b.treeManager.GetLocalTree()
 	if err != nil {
@@ -116,6 +115,7 @@ func (b *treeBuilder) processTree(treeCmd *tree.Representation, rootCmd *cobra.C
 				annotations["formulaPath"] = f.Path
 				annotations["formulaBin"] = f.Bin
 				annotations["formulaConfig"] = f.Config
+				annotations["formulaRepoUrl"] = f.RepoUrl
 				cmd = &cobra.Command{
 					Use:   v.Usage,
 					Short: v.Help,
@@ -126,12 +126,17 @@ func (b *treeBuilder) processTree(treeCmd *tree.Representation, rootCmd *cobra.C
 							fPath := cmd.Annotations["formulaPath"]
 							fBin := cmd.Annotations["formulaBin"]
 							fConf := cmd.Annotations["formulaConfig"]
+							fRepoUrl := cmd.Annotations["formulaRepoUrl"]
 							frm := formula.Definition{
-								Path:   fPath,
-								Bin:    fBin,
-								Config: fConf,
+								Path:    fPath,
+								Bin:     fBin,
+								Config:  fConf,
+								RepoUrl: fRepoUrl,
 							}
-							b.formulaManager.Run(frm)
+							err := b.formulaManager.Run(frm)
+							if err != nil {
+								return err
+							}
 						}
 						return nil
 					},
