@@ -90,3 +90,6 @@ Temporary Items
 *.ipr
 *.iws
 .idea/
+
+# Jenkins mvn
+settings.xml
