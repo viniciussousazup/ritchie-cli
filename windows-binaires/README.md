@@ -2,7 +2,7 @@
 
 Binaries to install a ritchie cli terminal on Windows. We all know that windows terminals don't behave like linux bash. To make ritchie autocomplete works on Windows, we maked a custom terminal that works like a linux bash for Windows users. This is maked with a custom Cmder Terminal
 
-<img src="docs/img/ritchie-cli-architecture.png">
+<img src="../docs/img/ritchie-cli-architecture.png">
 
 ## How it works
 
