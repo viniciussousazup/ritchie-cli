@@ -24,7 +24,6 @@ node {
     }
 
     syncWithGithubRepo {
-      githubSourceBranch = "${env.BRANCH_NAME}"
       githubDestinationOrg = "martetech"
       githubDestinationRepo = projectName
       githubDestinationBranch = "marte"
