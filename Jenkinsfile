@@ -23,6 +23,12 @@ node {
       notPublishable = true
     }
 
+    syncWithGithubRepo {
+      githubDestinationOrg = "martetech"
+      githubDestinationRepo = projectName
+      githubDestinationBranch = "marte"
+    }
+
   } catch (e) {
 
       notifyBuildStatus {
