@@ -27,6 +27,21 @@ To maintain the installer, edit the bat file rit-install.bat on folder rit-insta
 
 If you want to edit the custom terminal, unzip the ritchie.zip of folder rit-install-$VERSION make your editions and zip the file again. Generate the exe installer again with bat2exe on folder utils, increase version make a changelog file and send to repository.
 
+## Troubleshooting
+
+Question: Where are the installation binaries?
+Answer: On your C:\tools\ritchie
+
+Question: When I opened terminal and send rit command the output says "rit command not found"
+Answer: This occurs when rit binarie cannot set by installtion, please open cmd with administrator directives and run command above:
+
+```
+	setx /m C:\tools\ritchie\cygwin\bin
+	setx /m C:\Users\$YOUR_USERNAME\.rit
+	
+```
+
+
 ## Contributors
 
 * [@viniciusaparecidozup](https://github.com/viniciusaparecidozup) 
