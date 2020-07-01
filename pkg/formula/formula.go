@@ -20,6 +20,7 @@ const (
 	CommandEnv           = "COMMAND"
 	PwdEnv               = "PWD"
 	CPwdEnv              = "CURRENT_PWD"
+	OutputEnv            = "RIT_OUTPUT_DIR"
 	BinPattern           = "%s%s"
 	BinPathPattern       = "%s/bin"
 	EnvPattern           = "%s=%s"
@@ -28,6 +29,7 @@ const (
 	DefaultCacheQty      = 5
 	TreePath             = "/tree/tree.json"
 	MakefilePath         = "/Makefile"
+	OutputDir            = "%s/%s-outputs"
 )
 
 type (
@@ -38,6 +40,11 @@ type (
 		Label   string   `json:"label"`
 		Items   []string `json:"items"`
 		Cache   Cache    `json:"cache"`
+	}
+
+	Output struct {
+		Name  string `json:"name"`
+		Print bool   `json:"print"`
 	}
 
 	Cache struct {
@@ -53,11 +60,12 @@ type (
 	}
 
 	Config struct {
-		Name        string  `json:"name"`
-		Command     string  `json:"command"`
-		Description string  `json:"description"`
-		Language    string  `json:"language"`
-		Inputs      []Input `json:"inputs"`
+		Name        string   `json:"name"`
+		Command     string   `json:"command"`
+		Description string   `json:"description"`
+		Language    string   `json:"language"`
+		Inputs      []Input  `json:"inputs"`
+		Outputs     []Output `json:"outputs"`
 	}
 
 	// Definition type that represents a Formula
@@ -80,6 +88,7 @@ type (
 		TmpDir         string
 		TmpBinDir      string
 		TmpBinFilePath string
+		TmpOutputDir   string
 		Config         Config
 		ContainerId    string
 	}
@@ -99,6 +108,10 @@ type PostRunner interface {
 
 type InputRunner interface {
 	Inputs(cmd *exec.Cmd, setup Setup, inputType api.TermInputType) error
+}
+
+type OutputRunner interface {
+	ValidAndPrint(setup Setup) error
 }
 
 type Setuper interface {
@@ -187,6 +200,11 @@ func (d *Definition) BinPath(formula string) string {
 // BinFilePath builds the bin file path from binPath and binName
 func (d *Definition) BinFilePath(binPath, binName string) string {
 	return fmt.Sprintf("%s/%s", binPath, binName)
+}
+
+// OutputDir builds the output dir path from tmpBinDir
+func (d *Definition) OutputDir(tmpBinDir, u string) string {
+	return fmt.Sprintf(OutputDir, tmpBinDir, u)
 }
 
 // BundleURL builds the bundle url

@@ -14,10 +14,16 @@ type DefaultRunner struct {
 	formula.PreRunner
 	formula.PostRunner
 	formula.InputRunner
+	output formula.OutputRunner
 }
 
-func NewDefaultRunner(preRunner formula.PreRunner, postRunner formula.PostRunner, inRunner formula.InputRunner) DefaultRunner {
-	return DefaultRunner{preRunner, postRunner, inRunner}
+func NewDefaultRunner(
+	preRunner formula.PreRunner,
+	postRunner formula.PostRunner,
+	inRunner formula.InputRunner,
+	outRunner formula.OutputRunner,
+) DefaultRunner {
+	return DefaultRunner{preRunner, postRunner, inRunner, outRunner}
 }
 
 func (d DefaultRunner) Run(def formula.Definition, inputType api.TermInputType) error {
@@ -31,8 +37,10 @@ func (d DefaultRunner) Run(def formula.Definition, inputType api.TermInputType) 
 	cmd.Env = os.Environ()
 	pwdEnv := fmt.Sprintf(formula.EnvPattern, formula.PwdEnv, setup.Pwd)
 	cPwdEnv := fmt.Sprintf(formula.EnvPattern, formula.CPwdEnv, setup.Pwd)
+	outputEnv := fmt.Sprintf(formula.EnvPattern, formula.OutputEnv, setup.TmpOutputDir)
 	cmd.Env = append(cmd.Env, pwdEnv)
 	cmd.Env = append(cmd.Env, cPwdEnv)
+	cmd.Env = append(cmd.Env, outputEnv)
 
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
@@ -47,6 +55,10 @@ func (d DefaultRunner) Run(def formula.Definition, inputType api.TermInputType) 
 	}
 
 	if err := cmd.Wait(); err != nil {
+		return err
+	}
+
+	if err := d.output.ValidAndPrint(setup); err != nil {
 		return err
 	}
 
