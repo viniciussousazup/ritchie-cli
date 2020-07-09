@@ -28,7 +28,7 @@ const notAllowedChars = `\/><,@-`
 type createFormulaCmd struct {
 	homeDir         string
 	formula         formula.CreateBuilder
-	workspace       formula.WorkspaceAddListValidator
+	workspace       formula.WorkspaceAddList
 	inText          prompt.InputText
 	inTextValidator prompt.InputTextValidator
 	inList          prompt.InputList
@@ -38,7 +38,7 @@ type createFormulaCmd struct {
 func NewCreateFormulaCmd(
 	homeDir string,
 	formula formula.CreateBuilder,
-	workspace formula.WorkspaceAddListValidator,
+	workspace formula.WorkspaceAddList,
 	inText prompt.InputText,
 	inTextValidator prompt.InputTextValidator,
 	inList prompt.InputList,

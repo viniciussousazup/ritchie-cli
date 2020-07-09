@@ -68,22 +68,3 @@ func (m Manager) List() (formula.Workspaces, error) {
 
 	return workspaces, nil
 }
-
-func (m Manager) Validate(workspace formula.Workspace) error {
-	dir := workspace.Dir
-	if !m.file.Exists(dir) {
-		return ErrInvalidWorkspace
-	}
-
-	makefilePath := path.Join(dir, formula.MakefilePath)
-	if !m.file.Exists(makefilePath) {
-		return ErrMakefileNotFound
-	}
-
-	treePath := path.Join(dir, formula.TreePath)
-	if !m.file.Exists(treePath) {
-		return ErrTreeJsonNotFound
-	}
-
-	return nil
-}

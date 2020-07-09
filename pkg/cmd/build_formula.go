@@ -24,7 +24,7 @@ const (
 
 type buildFormulaCmd struct {
 	userHomeDir string
-	workspace   formula.WorkspaceAddListValidator
+	workspace   formula.WorkspaceAddList
 	formula     formula.Builder
 	watcher     formula.Watcher
 	directory   stream.DirListChecker
@@ -35,7 +35,7 @@ type buildFormulaCmd struct {
 func NewBuildFormulaCmd(
 	userHomeDir string,
 	formula formula.Builder,
-	workManager formula.WorkspaceAddListValidator,
+	workManager formula.WorkspaceAddList,
 	watcher formula.Watcher,
 	directory stream.DirListChecker,
 	inText prompt.InputText,
@@ -81,10 +81,6 @@ func (b buildFormulaCmd) runFunc() CommandRunnerFunc {
 		}
 
 		if wspace.Dir != defaultWorkspace {
-			if err := b.workspace.Validate(wspace); err != nil {
-				return err
-			}
-
 			if err := b.workspace.Add(wspace); err != nil {
 				return err
 			}

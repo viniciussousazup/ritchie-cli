@@ -23,12 +23,7 @@ type WorkspaceLister interface {
 	List() (Workspaces, error)
 }
 
-type WorkspaceValidator interface {
-	Validate(workspace Workspace) error
-}
-
-type WorkspaceAddListValidator interface {
+type WorkspaceAddList interface {
 	WorkspaceAdder
 	WorkspaceLister
-	WorkspaceValidator
 }
