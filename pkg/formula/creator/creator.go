@@ -97,10 +97,6 @@ func (c CreateManager) generateFormulaFiles(fPath, pkgName, lang, fCmdName, work
 		return err
 	}
 
-	if err := createConfigFile(fPath); err != nil {
-		return err
-	}
-
 	if err := c.createSrcFiles(fPath, pkgName, lang, fCmdName); err != nil {
 		return err
 	}
@@ -156,6 +152,10 @@ func (c CreateManager) createGenericFiles(srcDir, pkg, dir string, l formula.Lan
 		if err != nil {
 			return err
 		}
+	}
+
+	if err := createConfigFile(dir, l.DockerIB); err != nil {
+		return err
 	}
 
 	if err := c.createMakefileForm(srcDir, pkg, dir, l.Makefile, l.Compiled); err != nil {
@@ -220,8 +220,14 @@ func createMainFile(dir, pkg, tpl, fileFormat, startFile string, uc bool) error 
 	return fileutil.WriteFilePerm(fmt.Sprintf("%s/%s%s", dir, startFile, fileFormat), []byte(tpl), 0777)
 }
 
-func createConfigFile(dir string) error {
+func createConfigFile(dir string, dockerIB string) error {
 	tplFile := template.Config
+	if dockerIB != "" {
+		dockerIBJson := fmt.Sprintf(`"dockerImageBuilder": "%s",`, dockerIB)
+		tplFile = strings.ReplaceAll(tplFile, "{{dockerImageBuilder}}", dockerIBJson)
+	} else {
+		tplFile = strings.ReplaceAll(tplFile, "{{dockerImageBuilder}}", "")
+	}
 	return fileutil.WriteFile(fmt.Sprintf("%s/config.json", dir), []byte(tplFile))
 }
 

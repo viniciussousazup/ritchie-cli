@@ -30,6 +30,7 @@ type Lang struct {
 	PackageJson  string
 	File         string
 	Pkg          string
+	DockerIB     string
 	Compiled     bool
 	UpperCase    bool
 }

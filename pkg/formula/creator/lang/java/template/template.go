@@ -120,21 +120,23 @@ bat-windows:
 	WindowsBuild = `:: Java parameters
 echo off
 SETLOCAL
-SET BINARY_NAME_UNIX={{bin-name}}.sh
-SET BINARY_NAME_WINDOWS={{bin-name}}.bat
-SET DIST=..\dist
-SET DIST_DIR=%DIST%\commons\bin
+SET BIN_FOLDER=..\bin
+SET BIN_NAME=Main.jar
+SET BAT_FILE=%BIN_FOLDER%\run.bat
+
 :build
-    mkdir %DIST_DIR%
-	javac -source 1.8 -target 1.8 *.java
-    echo Main-Class: Main > manifest.txt
-    jar cvfm Main.jar manifest.txt *.class {{bin-name}}/*.class
-    more +1 run_template > %BINARY_NAME_WINDOWS%
-    copy run_template %BINARY_NAME_UNIX%
-    for %%i in (Main.jar %BINARY_NAME_WINDOWS% %BINARY_NAME_UNIX% Dockerfile set_umask.sh) do copy %%i %DIST_DIR%
-    erase Main.jar manifest.txt *.class {{bin-name}}\*.class %BINARY_NAME_WINDOWS% %BINARY_NAME_UNIX%
+    call mvn clean install
+    mkdir %BIN_FOLDER%
+    copy target\%BIN_NAME% %BIN_FOLDER%\%BIN_NAME%
+    del /Q /F target
+    GOTO BAT_WINDOWS
     GOTO DONE
+
+:BAT_WINDOWS
+    	echo @ECHO OFF > %BAT_FILE%
+    	echo java -jar %BIN_NAME% >> %BAT_FILE%
 :DONE`
+
 	Pom = `
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"

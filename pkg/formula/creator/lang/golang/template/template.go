@@ -69,7 +69,7 @@ sh-unix:
 bat-windows:
 	echo '@ECHO OFF' > $(BAT)
 	echo 'cd windows' >> $(BAT)
-	echo 'start $(BIN_NAME).exe' >> $(BAT)
+	echo 'echo start /B /WAIT $(BIN_NAME).exe' >> $(BAT)
 
 test:
 	$(GOTEST) -short ` + "`go list ./... | grep -v vendor/`"
@@ -116,45 +116,28 @@ func(in Input)Run()  {
 	WindowsBuild = `:: Go parameters
 echo off
 SETLOCAL
-SET BINARY_NAME={{bin-name}}
+SET BINARY_NAME=main
 SET GOCMD=go
 SET GOBUILD=%GOCMD% build
-SET GOTEST=%GOCMD% test
 SET CMD_PATH=main.go
-SET DIST=..\dist
-SET DIST_MAC_DIR=%DIST%\darwin\bin
-SET BIN_MAC=%BINARY_NAME%-darwin
-SET DIST_LINUX_DIR=%DIST%\linux\bin
-SET BIN_LINUX=%BINARY_NAME%-linux
-SET DIST_WIN_DIR=%DIST%\windows\bin
-SET BIN_WIN=%BINARY_NAME%-windows.exe
+SET BIN_FOLDER=..\bin
+SET DIST_WIN_DIR=%BIN_FOLDER%\windows
+SET BIN_WIN=%BINARY_NAME%.exe
 :build
-	mkdir %DIST_MAC_DIR% 
-    mkdir %DIST_LINUX_DIR% 
     mkdir %DIST_WIN_DIR%
     SET GO111MODULE=on
     for /f %%i in ('go list -m') do set MODULE=%%i
-    CALL :linux
-    CALL :darwin
     CALL :windows
-    GOTO DONE
-:linux
-    SET CGO_ENABLED=0 
-    SET GOOS=linux
-    SET GOARCH=amd64
-    %GOBUILD% -tags release -o %DIST_LINUX_DIR%\%BIN_LINUX% -v %CMD_PATH% && xcopy . %DIST_LINUX_DIR% /E /H /C /I && xcopy ..\config.json %DIST_LINUX_DIR%\..\
-    GOTO DONE
-:darwin
-    SET CGO_ENABLED=
-	SET GOOS=darwin
-    SET GOARCH=amd64
-    %GOBUILD% -tags release -o %DIST_MAC_DIR%\%BIN_MAC% -v %CMD_PATH%  && xcopy . %DIST_MAC_DIR% /E /H /C /I && xcopy ..\config.json %DIST_MAC_DIR%\..\
     GOTO DONE
 :windows
     SET CGO_ENABLED=
 	SET GOOS=windows
     SET GOARCH=amd64
-    %GOBUILD% -tags release -o %DIST_WIN_DIR%\%BIN_WIN% -v %CMD_PATH% && xcopy . %DIST_WIN_DIR% /E /H /C /I && xcopy ..\config.json %DIST_WIN_DIR%\..\
+    %GOBUILD% -tags release -o %DIST_WIN_DIR%\%BIN_WIN% -v %CMD_PATH%
+    echo @ECHO OFF > %BIN_FOLDER%\run.bat
+    echo cd windows  >> %BIN_FOLDER%\run.bat
+    echo start /B /WAIT main.exe  >> %BIN_FOLDER%\run.bat
     GOTO DONE
 :DONE`
+	DockerIB = "cimg/go:1.14"
 )

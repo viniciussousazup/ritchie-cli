@@ -2,6 +2,7 @@ package template
 
 const (
 	Config = `{
+  {{dockerImageBuilder}}	
   "description": "Sample inputs in Ritchie.",
   "inputs" : [
     {

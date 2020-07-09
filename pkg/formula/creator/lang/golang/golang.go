@@ -30,6 +30,7 @@ func New(
 			Dockerfile:   template.Dockerfile,
 			Pkg:          template.Pkg,
 			WindowsBuild: template.WindowsBuild,
+			DockerIB:     template.DockerIB,
 			Compiled:     true,
 			UpperCase:    false,
 		},
