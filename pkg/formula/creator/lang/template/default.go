@@ -45,7 +45,7 @@ $ rit {{FormulaCmd}}
 ### description
  //TODO explain how to use this command
 `
-	Help      = `//TODO add some help msg`
+	Help      = `help placeholder for {{folderName}}`
 	GitIgnore = `
 # Created by https://www.gitignore.io
 

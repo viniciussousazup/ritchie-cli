@@ -46,7 +46,7 @@ func (j Java) Create(srcDir, pkg, dir string) error {
 	}
 
 	artifactId := strings.ReplaceAll(j.fCmdName, " ", "-")
-	baseJavaDir := strings.Split("src/main/java/com/ritchie/formula", "/")
+	baseJavaDir := strings.Split("main/java/com/ritchie/formula", "/")
 	javaSrcDir := path.Join(srcDir, path.Join(baseJavaDir...))
 	firstUpper := strings.Title(strings.ToLower(pkg))
 
@@ -58,7 +58,7 @@ func (j Java) Create(srcDir, pkg, dir string) error {
 		return err
 	}
 
-	if err := createPomFile(srcDir, artifactId); err != nil {
+	if err := createPomFile(dir, artifactId); err != nil {
 		return err
 	}
 

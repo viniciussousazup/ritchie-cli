@@ -158,19 +158,19 @@ func (c CreateManager) createGenericFiles(srcDir, pkg, dir string, l formula.Lan
 		return err
 	}
 
-	if err := c.createMakefileForm(srcDir, pkg, dir, l.Makefile, l.Compiled); err != nil {
+	if err := c.createMakefileForm(dir, pkg, l.Makefile, l.Compiled); err != nil {
 		return err
 	}
 
-	if err := c.createWindowsBuild(srcDir, pkg, l.WindowsBuild); err != nil {
+	if err := c.createWindowsBuild(dir, pkg, l.WindowsBuild); err != nil {
 		return err
 	}
 
-	if err := createDockerfile(pkg, srcDir, l.Dockerfile); err != nil {
+	if err := createDockerfile(pkg, dir, l.Dockerfile); err != nil {
 		return err
 	}
 
-	if err := createUmask(srcDir); err != nil {
+	if err := createUmask(dir); err != nil {
 		return err
 	}
 
@@ -188,11 +188,11 @@ func (c CreateManager) createWindowsBuild(dir, name, tpl string) error {
 	return c.file.Write(buildFile, []byte(tpl))
 }
 
-func (c CreateManager) createMakefileForm(dir, name, pathName, tpl string, compiled bool) error {
+func (c CreateManager) createMakefileForm(dir, name, tpl string, compiled bool) error {
 	makefilePath := path.Join(dir, formula.MakefilePath)
 	if compiled {
 		tpl = strings.ReplaceAll(tpl, "{{name}}", name)
-		tpl = strings.ReplaceAll(tpl, "{{form-path}}", pathName)
+		tpl = strings.ReplaceAll(tpl, "{{form-path}}", dir)
 		return c.file.Write(makefilePath, []byte(tpl))
 	}
 	tpl = strings.ReplaceAll(tpl, formula.NameBin, name)
@@ -238,7 +238,9 @@ func createHelpFiles(formulaCmdName, workSpacePath string) error {
 		tPath := path.Join(workSpacePath, path.Join(d...))
 		helpPath := fmt.Sprintf("%s/help.txt", tPath)
 		if !fileutil.Exists(helpPath) {
-			err := fileutil.WriteFile(helpPath, []byte(template.Help))
+			folderName := path.Base(tPath)
+			tpl := strings.ReplaceAll(template.Help, "{{folderName}}", folderName)
+			err := fileutil.WriteFile(helpPath, []byte(tpl))
 			if err != nil {
 				return err
 			}
