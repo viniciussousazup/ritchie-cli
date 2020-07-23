@@ -75,7 +75,7 @@ func (d DefaultSetup) buildFormula(formulaPath, binFilePath string, config formu
 			prompt.Info("Building formula with docker...")
 			volume := fmt.Sprintf(volumeDockerPattern, formulaPath)
 			args := []string{dockerRunCmd, "-v", volume, "--entrypoint", "/bin/sh", config.DockerIB, "-c",
-				"cd /app && /usr/bin/make build"}
+				"sudo chmod 0777 -R /app && cd /app && /usr/bin/make build && sudo chmod 0755 -R /app && sudo chown 1001:1001 -R /app"}
 			cmd := exec.Command(docker, args...)
 			cmd.Env = os.Environ()
 			cmd.Stdin = os.Stdin
