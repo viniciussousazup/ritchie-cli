@@ -28,6 +28,7 @@ import (
 	"github.com/ZupIT/ritchie-cli/pkg/formula/builder"
 	"github.com/ZupIT/ritchie-cli/pkg/formula/creator"
 	"github.com/ZupIT/ritchie-cli/pkg/formula/creator/template"
+	"github.com/ZupIT/ritchie-cli/pkg/formula/lister"
 	"github.com/ZupIT/ritchie-cli/pkg/formula/repo"
 	"github.com/ZupIT/ritchie-cli/pkg/formula/runner"
 	"github.com/ZupIT/ritchie-cli/pkg/formula/tree"
@@ -132,6 +133,9 @@ func buildCommands() *cobra.Command {
 		HttpClient:       &http.Client{Timeout: 1 * time.Second},
 	}
 	defaultUrlFinder := upgrade.DefaultUrlFinder{}
+
+	rootLister := lister.NewLister()
+
 	rootCmd := cmd.NewRootCmd(ritchieHomeDir, dirManager, tutorialFinder)
 
 	// level 1
@@ -146,6 +150,7 @@ func buildCommands() *cobra.Command {
 	updateCmd := cmd.NewUpdateCmd()
 	buildCmd := cmd.NewBuildCmd()
 	upgradeCmd := cmd.NewUpgradeCmd(defaultUpgradeResolver, upgradeManager, defaultUrlFinder)
+	generateCmd := cmd.NewGenerateCmd()
 
 	tutorialCmd := cmd.NewTutorialCmd(ritchieHomeDir, inputList, tutorialFindSetter)
 
@@ -171,9 +176,9 @@ func buildCommands() *cobra.Command {
 	autocompleteBash := cmd.NewAutocompleteBash(autocompleteGen)
 	autocompleteFish := cmd.NewAutocompleteFish(autocompleteGen)
 	autocompletePowerShell := cmd.NewAutocompletePowerShell(autocompleteGen)
-
 	createFormulaCmd := cmd.NewCreateFormulaCmd(userHomeDir, createBuilder, tplManager, formulaWorkspace, inputText, inputTextValidator, inputList, tutorialFinder)
 	buildFormulaCmd := cmd.NewBuildFormulaCmd(userHomeDir, formulaLocalBuilder, formulaWorkspace, watchManager, dirManager, inputText, inputList, tutorialFinder)
+	generateStdinCmd := cmd.NewGenerateStdinCmd(rootLister)
 
 	autocompleteCmd.AddCommand(autocompleteZsh, autocompleteBash, autocompleteFish, autocompletePowerShell)
 	addCmd.AddCommand(addRepoCmd)
@@ -185,6 +190,7 @@ func buildCommands() *cobra.Command {
 	setCmd.AddCommand(setCredentialCmd, setCtxCmd, setPriorityCmd)
 	showCmd.AddCommand(showCtxCmd)
 	buildCmd.AddCommand(buildFormulaCmd)
+	generateCmd.AddCommand(generateStdinCmd)
 
 	formulaCmd := cmd.NewFormulaCommand(api.CoreCmds, treeManager, formulaRunner)
 	if err := formulaCmd.Add(rootCmd); err != nil {
@@ -207,6 +213,7 @@ func buildCommands() *cobra.Command {
 				buildCmd,
 				upgradeCmd,
 				tutorialCmd,
+				generateCmd,
 			},
 		},
 	}
@@ -235,5 +242,6 @@ func buildCommands() *cobra.Command {
 	groups.Add(rootCmd)
 	templates.ActsAsRootCommand(rootCmd, nil, groups...)
 
+	rootLister.SetRoot(rootCmd)
 	return rootCmd
 }
